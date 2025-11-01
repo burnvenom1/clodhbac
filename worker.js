@@ -154,13 +154,18 @@ async function getXsrfToken(selectedHeaders) {
     }
 }
 
-// OTP kodu al
+// OTP kodu al - CEVAP GELENE KADAR BEKLEYEN
 async function getOtpCode(email) {
     const otpUrl = `https://script.google.com/macros/s/AKfycbxvTJG2ou3TGgCv2PHaaFjw8-dpRkxwnuJuJHZ6CXAVCo7jRXvm_Je5c370uGundLo3KQ/exec?email=${email}&mode=0`;
     
+    console.log('📧 OTP API çağrılıyor...');
+    
     try {
+        // ⏳ CEVAP GELENE KADAR BEKLE (timeout'suz)
         const response = await fetch(otpUrl);
         const otpResponse = await response.text();
+        
+        console.log('📨 OTP API Response:', otpResponse);
         
         let otpCode = null;
         const match = otpResponse.match(/\b\d{6}\b/);
@@ -171,8 +176,15 @@ async function getOtpCode(email) {
             otpCode = otpResponse.trim();
         }
         
-        return otpCode;
+        if (otpCode) {
+            console.log(`🔢 OTP Kodu Bulundu: ${otpCode}`);
+            return otpCode;
+        } else {
+            console.log('❌ OTP kodu bulunamadı');
+            return null;
+        }
     } catch (error) {
+        console.log('❌ OTP KODU HATASI:', error.message);
         return null;
     }
 }

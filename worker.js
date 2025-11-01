@@ -17,4 +17,4 @@ export default {
 
         return new Response(JSON.stringify(result, null, 2));
     }
-}
+} 

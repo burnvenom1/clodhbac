@@ -1,38 +1,15 @@
 // Email listesi
 const EMAIL_LIST = [
     "jihpngpnd@emlhub.com", "tmrzfanje@emlpro.com", "wiraypzse@emlpro.com",
-    "lnmwhbvvf@emltmp.com", "bshuzcvvf@emltmp.com", "hsfsqxcug@emltmp.com",
-    "nqywhdnoh@emlhub.com", "048370crsm@freeml.net", "04837v1h98@freeml.net",
-    "04838e039m@freeml.net", "04839mk808@freeml.net", "0483aa1zj4@freeml.net",
-    "jy1c7eh2@mailpwr.com", "jy1kb68h@mailpwr.com", "jz6qk02m@mailpwr.com",
-    "jz6ta9hn@mailpwr.com", "jz72a572@mailpwr.com", "jz74ndyw@mailpwr.com",
-    "jz76sw1m@mailpwr.com", "manunasodun3@mimimail.me", "manun1kinyz3@mimimail.me",
-    "manupefovuz3@mimimail.me", "manup0lutuj2@mimimail.me", "manusyk1taw2@mimimail.me",
-    "manutinajyl3@mimimail.me", "manut0sepem3@mimimail.me", "lozydozajid2@10mail.xyz",
-    "hiwemubadom2@10mail.xyz", "mobeliv1myn3@10mail.xyz", "mymib0sejyz2@10mail.xyz",
-    "bohel1meken3@10mail.xyz", "b0togovojev2@10mail.xyz", "guv1s0f0tak2@10mail.xyz",
-    "ahmcemzni@10mail.org", "ahmcffaeh@10mail.org", "ahmcfwpfd@10mail.org",
-    "ahmcgaohd@10mail.org", "ahmcgiwye@10mail.org", "ahmcgoyfv@10mail.org",
-    "ahmchfabm@10mail.org", "ahbzmfiun@yomail.info", "ahbzmxpoh@yomail.info",
-    "ahbznddyb@yomail.info", "ahbznefnq@yomail.info", "ahbzognth@yomail.info",
-    "ahbzoofgb@yomail.info", "ahbzoznkl@yomail.info", "jwjavzvej@emltmp.com",
-    "iycfyzvej@emltmp.com", "aymjdawej@emltmp.com", "hcfuhawej@emltmp.com",
-    "ztotqawej@emltmp.com", "bekxwawej@emltmp.com", "axhbbbwej@emltmp.com",
-    "rhhzbqmgi@emlpro.com", "vcfdhqmgi@emlpro.com", "utcpmqmgi@emlpro.com",
-    "hqnjtqmgi@emlpro.com", "qvkpyqmgi@emlpro.com", "jdawermgi@emlpro.com",
-    "khhonrmgi@emlpro.com", "qwxugbxai@emlhub.com", "fejqjbxai@emlhub.com",
-    "fjkwmbxai@emlhub.com", "tgyspbxai@emlhub.com", "pzbesbxai@emlhub.com",
-    "qqkqubxai@emlhub.com", "tnglxbxai@emlhub.com", "04dndf7ps8@spymail.one",
-    "04dndhs6fc@spymail.one", "04dndn5tw4@spymail.one", "04dndsn43c@spymail.one",
-    "04dndz9z90@spymail.one", "04dne23ncg@spymail.one", "04dnebnewg@spymail.one"
+    "lnmwhbvvf@emltmp.com", "bshuzcvvf@emltmp.com", "hsfsqxcug@emltmp.com"
 ];
 
-// Global cookie storage - KV kullan
+// Global cookie storage
 let globalCookies = new Map();
 
 // Header Setleri
 const HEADER_SETS = [
-    { // Windows Chrome
+    {
         "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
         "SecCHUAMobile": "?0",
@@ -40,7 +17,7 @@ const HEADER_SETS = [
         "Accept": "application/json, text/plain, */*",
         "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
     },
-    { // macOS Safari
+    {
         "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
         "SecCHUA": '"Not-A.Brand";v="8", "Safari";v="17"',
         "SecCHUAMobile": "?0",
@@ -96,6 +73,10 @@ function getFingerprint() {
 function getRandomTurkishName() {
     const names = ["Ahmet", "Mehmet", "Mustafa", "Ali", "Hüseyin", "Hasan", "İbrahim", "Yusuf", "Ömer", "Ayşe", "Fatma", "Emine", "Hatice", "Zeynep", "Elif"];
     return names[Math.floor(Math.random() * names.length)];
+}
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // XSRF token al
@@ -206,102 +187,108 @@ async function makePostRequest(url, body, xsrfToken, selectedHeaders) {
     }
 }
 
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// Ana kayıt işlemi
+// Ana kayıt fonksiyonu - BACKGROUND'da çalışır
 async function startRegistration(email) {
-    const selectedHeaders = getRandomHeaders();
-    const fingerprint = getFingerprint();
-
-    // 1. XSRF Token al
-    let xsrfToken = await getXsrfToken(selectedHeaders);
-
-    // 1. POST: Üyelik İsteği
-    const postBody1 = {
-        email: email,
-        returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=c7ca3f6c28c5445aa5c1f4d52ce65d6d&code_challenge=t44-iDRkzoBssUdCS9dHN3YZBks8RTWlxV-BpC4Jbos&code_challenge_method=S256&response_mode=query"
-    };
-
-    const result1 = await makePostRequest(
-        "https://oauth.hepsiburada.com/api/authenticate/createregisterrequest",
-        postBody1,
-        xsrfToken,
-        selectedHeaders
-    );
-
-    if (result1.success && result1.data.success) {
-        // OTP için bekle
-        await delay(15000);
+    try {
+        console.log(`🚀 BACKGROUND: Kayıt başlatılıyor - ${email}`);
         
-        // OTP Kodu al
-        const otpCode = await getOtpCode(email);
-        
-        if (otpCode) {
-            // 2. POST: OTP Doğrulama
-            xsrfToken = await getXsrfToken(selectedHeaders);
+        const selectedHeaders = getRandomHeaders();
+        const fingerprint = getFingerprint();
+
+        // 1. XSRF Token al
+        let xsrfToken = await getXsrfToken(selectedHeaders);
+        console.log(`🔑 BACKGROUND: XSRF Token alındı`);
+
+        // 1. POST: Üyelik İsteği
+        const postBody1 = {
+            email: email,
+            returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=c7ca3f6c28c5445aa5c1f4d52ce65d6d&code_challenge=t44-iDRkzoBssUdCS9dHN3YZBks8RTWlxV-BpC4Jbos&code_challenge_method=S256&response_mode=query"
+        };
+
+        const result1 = await makePostRequest(
+            "https://oauth.hepsiburada.com/api/authenticate/createregisterrequest",
+            postBody1,
+            xsrfToken,
+            selectedHeaders
+        );
+
+        if (result1.success && result1.data.success) {
+            console.log(`✅ BACKGROUND: Kayıt isteği başarılı - Reference: ${result1.data.data.referenceId}`);
             
-            const postBody2 = {
-                otpReference: result1.data.data.referenceId,
-                otpCode: otpCode
-            };
-
-            const result2 = await makePostRequest(
-                "https://oauth.hepsiburada.com/api/account/ValidateTwoFactorEmailOtp",
-                postBody2,
-                xsrfToken,
-                selectedHeaders
-            );
-
-            if (result2.success && result2.data.success && result2.data.requestId) {
-                // Kısa bekleme
-                await delay(3000);
+            // OTP için bekle - BACKGROUND'da sorun yok
+            console.log(`⏳ BACKGROUND: 15 saniye bekleniyor...`);
+            await delay(15000);
+            
+            // OTP Kodu al
+            const otpCode = await getOtpCode(email);
+            
+            if (otpCode) {
+                console.log(`🔢 BACKGROUND: OTP alındı: ${otpCode}`);
                 
-                // 3. POST: Kayıt Tamamlama
+                // 2. POST: OTP Doğrulama
                 xsrfToken = await getXsrfToken(selectedHeaders);
                 
-                const firstName = getRandomTurkishName();
-                const lastName = getRandomTurkishName();
-                const password = "Hepsiburada1";
-
-                const postBody3 = {
-                    subscribeEmail: false,
-                    firstName: firstName,
-                    lastName: lastName,
-                    password: password,
-                    subscribeSms: false,
-                    returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=0fe1789b3dee47458bdf70864a6a9931&code_challenge=1y2GcO5myCuDr8SsID6yMQyi5ZE6I_A9sJhKwYEgnpU&code_challenge_method=S256&response_mode=query",
-                    requestId: result2.data.requestId
+                const postBody2 = {
+                    otpReference: result1.data.data.referenceId,
+                    otpCode: otpCode
                 };
 
-                const result3 = await makePostRequest(
-                    "https://oauth.hepsiburada.com/api/authenticate/register",
-                    postBody3,
+                const result2 = await makePostRequest(
+                    "https://oauth.hepsiburada.com/api/account/ValidateTwoFactorEmailOtp",
+                    postBody2,
                     xsrfToken,
                     selectedHeaders
                 );
 
-                if (result3.success && result3.data.success) {
-                    return {
-                        success: true,
-                        email: email,
+                if (result2.success && result2.data.success && result2.data.requestId) {
+                    console.log(`✅ BACKGROUND: OTP doğrulama başarılı - Request: ${result2.data.requestId}`);
+                    
+                    // Kısa bekleme
+                    await delay(3000);
+                    
+                    // 3. POST: Kayıt Tamamlama
+                    xsrfToken = await getXsrfToken(selectedHeaders);
+                    
+                    const firstName = getRandomTurkishName();
+                    const lastName = getRandomTurkishName();
+                    const password = "Hepsiburada1";
+
+                    console.log(`👤 BACKGROUND: Kullanıcı bilgileri - ${firstName} ${lastName}`);
+
+                    const postBody3 = {
+                        subscribeEmail: false,
+                        firstName: firstName,
+                        lastName: lastName,
                         password: password,
-                        name: `${firstName} ${lastName}`,
-                        accessToken: result3.data.data.accessToken,
-                        refreshToken: result3.data.data.refreshToken
+                        subscribeSms: false,
+                        returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=0fe1789b3dee47458bdf70864a6a9931&code_challenge=1y2GcO5myCuDr8SsID6yMQyi5ZE6I_A9sJhKwYEgnpU&code_challenge_method=S256&response_mode=query",
+                        requestId: result2.data.requestId
                     };
+
+                    const result3 = await makePostRequest(
+                        "https://oauth.hepsiburada.com/api/authenticate/register",
+                        postBody3,
+                        xsrfToken,
+                        selectedHeaders
+                    );
+
+                    if (result3.success && result3.data.success) {
+                        console.log(`🎉 BACKGROUND: Kayıt BAŞARILI - ${email}`);
+                        console.log(`🔑 ACCESS TOKEN: ${result3.data.data.accessToken}`);
+                    } else {
+                        console.log(`❌ BACKGROUND: Kayıt başarısız - ${result3.data?.message}`);
+                    }
                 } else {
-                    return { success: false, error: result3.data?.message };
+                    console.log(`❌ BACKGROUND: OTP doğrulama başarısız`);
                 }
             } else {
-                return { success: false, error: "OTP doğrulama başarısız" };
+                console.log(`❌ BACKGROUND: OTP alınamadı`);
             }
         } else {
-            return { success: false, error: "OTP alınamadı" };
+            console.log(`❌ BACKGROUND: Kayıt isteği başarısız`);
         }
-    } else {
-        return { success: false, error: "Kayıt isteği başarısız" };
+    } catch (error) {
+        console.log(`💥 BACKGROUND Hata: ${error.message}`);
     }
 }
 
@@ -324,11 +311,23 @@ export default {
         if (url.pathname === "/register") {
             try {
                 const email = url.searchParams.get("email") || getFormattedEmail();
-                const result = await startRegistration(email);
                 
-                return new Response(JSON.stringify(result), {
+                // ⚡ HIZLI RESPONSE - 10ms altında
+                const response = new Response(JSON.stringify({
+                    status: "processing",
+                    message: "Kayıt işlemi başlatıldı",
+                    email: email,
+                    id: Date.now(),
+                    note: "İşlem arka planda devam ediyor, logları kontrol edin"
+                }), {
                     headers: { "Content-Type": "application/json", ...corsHeaders }
                 });
+
+                // 🎯 UZUN İŞLEMİ BACKGROUND'A AT
+                ctx.waitUntil(startRegistration(email));
+                
+                return response; // ⚡ 2-3ms'de response dön
+                
             } catch (error) {
                 return new Response(JSON.stringify({
                     success: false,
@@ -355,10 +354,12 @@ export default {
             });
         }
 
+        // Ana sayfa
         return new Response(JSON.stringify({
             message: "Hepsiburada Otomatik Kayıt API",
             endpoints: {
-                "/register?email=test@example.com": "Kayıt başlat",
+                "/register": "Kayıt başlat (GET veya POST)",
+                "/register?email=test@example.com": "Belirli email ile kayıt",
                 "/cookies": "Cookie durumunu göster"
             }
         }), {

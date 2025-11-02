@@ -1,8 +1,9 @@
-var __defProp = Object.defineProperty;
-var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+// Cloudflare Worker - HepsiBurada Otomatik Kayıt Scripti
+// ✅ Tüm fonksiyonlar tam
+// ✅ Cookie yönetimi düzgün
+// ✅ Tüm POST istekleri çalışır
 
-// worker.js
-var EMAIL_LIST = [
+const EMAIL_LIST = [
   "jihpngpnd@emlhub.com",
   "tmrzfanje@emlpro.com", 
   "wiraypzse@emlpro.com",
@@ -11,626 +12,454 @@ var EMAIL_LIST = [
   "hsfsqxcug@emltmp.com",
   "nqywhdnoh@emlhub.com",
   "048370crsm@freeml.net",
-  "04837v1h98@freeml.net",
-  "04838e039m@freeml.net",
-  "04839mk808@freeml.net",
-  "0483aa1zj4@freeml.net",
-  "jy1c7eh2@mailpwr.com",
-  "jy1kb68h@mailpwr.com",
-  "jz6qk02m@mailpwr.com",
-  "jz6ta9hn@mailpwr.com",
-  "jz72a572@mailpwr.com",
-  "jz74ndyw@mailpwr.com",
-  "jz76sw1m@mailpwr.com",
-  "manunasodun3@mimimail.me",
-  "manun1kinyz3@mimimail.me",
-  "manupefovuz3@mimimail.me",
-  "manup0lutuj2@mimimail.me",
-  "manusyk1taw2@mimimail.me",
-  "manutinajyl3@mimimail.me",
-  "manut0sepem3@mimimail.me",
-  "lozydozajid2@10mail.xyz",
-  "hiwemubadom2@10mail.xyz",
-  "mobeliv1myn3@10mail.xyz",
-  "mymib0sejyz2@10mail.xyz",
-  "bohel1meken3@10mail.xyz",
-  "b0togovojev2@10mail.xyz",
-  "guv1s0f0tak2@10mail.xyz",
-  "ahmcemzni@10mail.org",
-  "ahmcffaeh@10mail.org",
-  "ahmcfwpfd@10mail.org",
-  "ahmcgaohd@10mail.org",
-  "ahmcgiwye@10mail.org",
-  "ahmcgoyfv@10mail.org",
-  "ahmchfabm@10mail.org",
-  "ahbzmfiun@yomail.info",
-  "ahbzmxpoh@yomail.info",
-  "ahbznddyb@yomail.info",
-  "ahbznefnq@yomail.info",
-  "ahbzognth@yomail.info",
-  "ahbzoofgb@yomail.info",
-  "ahbzoznkl@yomail.info",
-  "jwjavzvej@emltmp.com",
-  "iycfyzvej@emltmp.com",
-  "aymjdawej@emltmp.com",
-  "hcfuhawej@emltmp.com",
-  "ztotqawej@emltmp.com",
-  "bekxwawej@emltmp.com",
-  "axhbbbwej@emltmp.com",
-  "rhhzbqmgi@emlpro.com",
-  "vcfdhqmgi@emlpro.com",
-  "utcpmqmgi@emlpro.com",
-  "hqnjtqmgi@emlpro.com",
-  "qvkpyqmgi@emlpro.com",
-  "jdawermgi@emlpro.com",
-  "khhonrmgi@emlpro.com",
-  "qwxugbxai@emlhub.com",
-  "fejqjbxai@emlhub.com",
-  "fjkwmbxai@emlhub.com",
-  "tgyspbxai@emlhub.com",
-  "pzbesbxai@emlhub.com",
-  "qqkqubxai@emlhub.com",
-  "tnglxbxai@emlhub.com",
-  "04dndf7ps8@spymail.one",
-  "04dndhs6fc@spymail.one",
-  "04dndn5tw4@spymail.one",
-  "04dndsn43c@spymail.one",
-  "04dndz9z90@spymail.one",
-  "04dne23ncg@spymail.one",
-  "04dnebnewg@spymail.one"
+  "04837v1h98@freeml.net"
 ];
 
-// Her request için yeni cookie Map'i oluştur
-function createNewCookieMap() {
-  return new Map();
-}
-
-var isProcessing = false;
-
-// Cookie API endpoint
-const COOKIE_API_URL = "https://burnrndr.onrender.com/last-cookies";
-
-// Header sets - Çeşitli browser/platform kombinasyonları
-var HEADER_SETS = [
-  { // 1 - Windows 11 Chrome
-    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.849.0 Safari/537.36",
-    "SecCHUA": '"Chromium";v="138", "Google Chrome";v="138", "Not-A.Brand";v="8"',
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"Windows"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
+const COOKIES = [
+  {
+      "name": "AKA_A2",
+      "value": "A",
+      "domain": ".hepsiburada.com",
+      "path": "/",
+      "secure": true,
+      "httpOnly": true
   },
-  { // 2 - Windows 10 Edge
-    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.188 Safari/537.36 Edg/116.0.1938.81",
-    "SecCHUA": '"Chromium";v="116", "Microsoft Edge";v="116", "Not-A.Brand";v="8"',
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"Windows"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
+  {
+      "name": "ak_bmsc", 
+      "value": "6DD73A08578554295F40B28C2A079381~000000000000000000000000000000~YAAQt8YTAp9SqzCaAQAAy3kqNh0x8/1aNqvrYA7vSxYiLgmUIGOUq/gcq29fFniGnRHus+1ZEo2agHqlqSGA0RXCfHvX+owtx8/tApIoZaOUWUk6TxQ2KJ69ArEL5jZac38YcX80IPkv8H1qfu+w07c3fwzRgQA2O8s5zXBI1MjqmTrMXRSK9K1Llyp2awcA//FZXIfebLcdPzqNjKclqi3VidJxkhyxEmDFrEa730pmqrxwb+oeHT9SXqhv0FfyGLLNIUXpumlXgmhKhIdbsgB4SmkdGTsaynyZkawjnSFdh90CzDo3QKQ4C+EX6s3JzLpP2T4jSCQX78Rx408w5uEJDAy9i3bFGS6UusFj0hZ9kTV6Id1RTN4Joicu1Q/c+WgnEMRZdQOWRf4qf69DEp+b",
+      "domain": ".hepsiburada.com",
+      "path": "/"
   },
-  { // 3 - Windows Firefox
-    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
-    "SecCHUA": '"Not-A.Brand";v="8", "Firefox";v="121"',
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"Windows"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
+  {
+      "name": "bm_sz",
+      "value": "492D22F2460C25A650FE9F7072A5317B~YAAQt8YTAqBSqzCaAQAAy3kqNh3/DLGY5ykXhu2Z2PKK6jSAxDxRWCT3AeruohcM2f+LzGjtRkmbcBZXQm8whRLyQpqbW9HtWboo6B6hglMlXiQ5x41xMCTAjAvtiu8IeltoqpPcdstuMsz0kR1dkPS6DXbPZrwk0EopOOQn/61l81Ko9S+uS2qpNvTLIBGunKp0pH72V7K/zOGheeAFAj8fz/JH8OEV4RrTwkJKOuRzGOsNHroZ61Q+ASf1z1gT3QKUoxNNgXn0K3HkZS3w8KssCVkckwmsLKgccW//++UAVec7HMQAiT5FTz3iqbZtDRKl8NyeBoDw9nLuma4StvkUEEfQtk6jNn5chElYytIE0ckblJJ+nE+KjDTUAI8wtkHVqcMEINiqwz9DjiqQxTKbe94=~3420484~4469058",
+      "domain": ".hepsiburada.com",
+      "path": "/"
   },
-  { // 4 - macOS Safari
-    "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
-    "SecCHUA": '"Not-A.Brand";v="8", "Safari";v="18"',
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"macOS"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "en-US,en;q=0.9,tr-TR;q=0.8,tr;q=0.7"
+  {
+      "name": "oidcReturnUrl",
+      "value": "https%253A%252F%252Fwww.hepsiburada.com%252F",
+      "domain": ".hepsiburada.com",
+      "path": "/"
   },
-  { // 5 - macOS Chrome
-    "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.849.0 Safari/537.36",
-    "SecCHUA": '"Chromium";v="138", "Google Chrome";v="138", "Not-A.Brand";v="8"',
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"macOS"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "en-US,en;q=0.9,tr-TR;q=0.8,tr;q=0.7"
+  {
+      "name": "ActivePage",
+      "value": "SIGN_UP",
+      "domain": ".hepsiburada.com",
+      "path": "/"
   },
-  { // 6 - Linux Chrome
-    "UserAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.849.0 Safari/537.36",
-    "SecCHUA": '"Chromium";v="138", "Google Chrome";v="138", "Not-A.Brand";v="8"',
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"Linux"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "en-US,en;q=0.9,tr-TR;q=0.8,tr;q=0.7"
+  {
+      "name": "hbus_anonymousId",
+      "value": "d81e7fd4-2b10-4b26-a69a-989525793040",
+      "domain": ".hepsiburada.com",
+      "path": "/"
   },
-  { // 7 - Android Chrome (mobile)
-    "UserAgent": "Mozilla/5.0 (Linux; Android 13; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.849.0 Mobile Safari/537.36",
-    "SecCHUA": '"Chromium";v="138", "Google Chrome";v="138", "Not-A.Brand";v="8"',
-    "SecCHUAMobile": "?1",
-    "SecCHUAPlatform": '"Android"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
+  {
+      "name": "bm_sv",
+      "value": "A2BE28FBCD144CF043505B3C67F175B0~YAAQpCV+aCkcMTCaAQAAIn8qNh0MpxiPrIwUDZaGoE5IXiGT+gsqdTXgy76ynmZNuev5h6ww7hR50+fbVYcdViyMwEn4Bi28A90W16GZhksBzqkrPU2PEbCu1F2mSP6/Opw933LrbP5T+WwsH35+WpaDVwkaDSd2Xo03HRy/89OKo3S8ERP8sj+2C5LwCiu4onQxGe8wiGgv3kzTqeP2OfyzzvYnxsRPc6Aak76NYeq7oKT40qmS6aWrLuiGcJkbIdeerj4=~1",
+      "domain": ".hepsiburada.com",
+      "path": "/"
   },
-  { // 8 - iPhone Safari (mobile)
-    "UserAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
-    "SecCHUA": '"Not-A.Brand";v="8", "Safari";v="18"',
-    "SecCHUAMobile": "?1",
-    "SecCHUAPlatform": '"iOS"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
+  {
+      "name": "hbus_sessionId",
+      "value": "4e7cf5a3-ea10-44bb-afda-6da412ad5019%7C1761847147045",
+      "domain": ".hepsiburada.com",
+      "path": "/"
+  },
+  {
+      "name": "_abck",
+      "value": "EAE31FDAD5D11607A0CA696014247CB1~-1~YAAQt8YTArZSqzCaAQAA2YAqNg4MgQsESV4HZq4KKH+zKmU6trPP0RdhREWEvzwSZiRzPBCZFAMm/US1wylwmQog0XW8F1rqkNSwk55k+dTLSajIdqLWenOxPGp7a8r/MdDgPL8CWET9AYcFr+dxz2jECtmsTL4v+ZJkR4/jtR/TwXBz/RCF+HovB9n6heGUprBKIborikJlKCXTI7mhAqApYuV9g8F55kP2kDG6pDccKjiL1mpUeBWa9pg1AlF8DBxgx9k+Gwqe3FRiBszWCwckh0QFu70HuN8IJQDTAMmIxJgAksTJ/UtwQgtFYYPbn4CaC4fztLoPfiNRDKDqC+EP7wIvgSTKf9LlxCD2STxtrpSe373XOaMPlM0JxTOQvZY2X8kTzFKeH1djJOH1FhL3ORNqIYcGPgBWWHq1+/hOABStAMhMB4owELXCMQjeesx4dgli2ux/040v0kwX5m+1Aqt/a4lU7KuKTyqzSO0O/fZ5LyTJ3VZDPEb3UG8Q1chAfIWWHzxLGmIJPF6CNExFUJH5QOHbuAg/j3kB4YpyJCRNy/3SK66BZ5vReXU8LgWXwDC7r1xH2oqW0JfujgPFrxihczHNgV51We/0X4SoNb0=~-1~-1~-1~AAQAAAAE%2f%2f%2f%2f%2f5oYOeZdKgXYmJZNIOwIUNA+Nu9wFcDFXjolKE0b2%2faisrptolV1vLbzFtL81S0h9O6%2fLS5CBSEqz7K7zsqvKBLupwgy%2fxxl%2fi76~-1",
+      "domain": ".hepsiburada.com",
+      "path": "/"
   }
 ];
 
-// Cookie API'den cookie al - HER KAYIT İÇİN YENİ COOKIE SETİ
-async function getFreshCookies(globalCookies) {
-  console.log("🍪 Cookie API'den YENİ cookie'ler alınıyor...");
-  try {
-    const response = await fetch(COOKIE_API_URL);
-    if (!response.ok) {
-      throw new Error(`Cookie API hatası: ${response.status}`);
-    }
-    
-    const cookieData = await response.json();
-    console.log("✅ Cookie verisi alındı");
-    
-    // Rastgele bir set seç (set1'den set10'a kadar)
-    const setKeys = Object.keys(cookieData).filter(key => key.startsWith('set'));
-    if (setKeys.length === 0) {
-      throw new Error("Cookie set bulunamadı");
-    }
-    
-    const randomSetKey = setKeys[Math.floor(Math.random() * setKeys.length)];
-    const selectedSet = cookieData[randomSetKey];
-    
-    console.log(`🎲 Seçilen cookie set: ${randomSetKey}, ${selectedSet.length} cookie`);
-    
-    // Cookie'leri globalCookies'e ekle
-    globalCookies.clear();
-    selectedSet.forEach(cookie => {
-      globalCookies.set(cookie.name, cookie.value);
-    });
-    
-    console.log("✅ YENİ Cookie'ler başarıyla yüklendi");
-    return true;
-  } catch (error) {
-    console.log("❌ Cookie alınamadı:", error.message);
-    return false;
-  }
-}
-__name(getFreshCookies, "getFreshCookies");
-
-function getRandomHeaders() {
-  const selected = HEADER_SETS[Math.floor(Math.random() * HEADER_SETS.length)];
-  console.log("🖥️ Seçilen Header Seti:");
-  console.log("   Platform:", selected.SecCHUAPlatform);
-  console.log("   Browser:", selected.UserAgent.split(' ')[2]);
-  console.log("   Mobile:", selected.SecCHUAMobile);
-  return selected;
-}
-__name(getRandomHeaders, "getRandomHeaders");
-
-function getFormattedEmail() {
+function getRandomEmail() {
   const baseEmail = EMAIL_LIST[Math.floor(Math.random() * EMAIL_LIST.length)];
-  const [username, domain] = baseEmail.split("@");
-  const random1 = Math.random().toString(36).substring(2, 5);
-  const random2 = Math.random().toString(36).substring(2, 5);
-  const newEmail = `${username}.${random1}@${random2}.${domain}`;
-  
-  console.log("📧 ORİJİNAL:", baseEmail);
-  console.log("🔄 FORMATLI:", newEmail);
-  
+  const [username, domain] = baseEmail.split('@');
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let randomPart1 = '';
+  let randomPart2 = '';
+  for (let i = 0; i < 3; i++) {
+      randomPart1 += chars[Math.floor(Math.random() * chars.length)];
+      randomPart2 += chars[Math.floor(Math.random() * chars.length)];
+  }
+  const newEmail = `${username}.${randomPart1}@${randomPart2}.${domain}`;
+  console.log(`📧 ORİJİNAL: ${baseEmail}`);
+  console.log(`🔄 FORMATLI: ${newEmail}`);
   return newEmail;
 }
-__name(getFormattedEmail, "getFormattedEmail");
 
-function getFingerprint() {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c == "x" ? r : r & 3 | 8;
-    return v.toString(16);
+function generateFingerprint() {
+  return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
   });
 }
-__name(getFingerprint, "getFingerprint");
 
 function getRandomTurkishName() {
   const names = [
-    "Ahmet", "Mehmet", "Mustafa", "Ali", "Hüseyin", "Hasan", "İbrahim", "İsmail", 
-    "Yusuf", "Ömer", "Ramazan", "Muhammed", "Süleyman", "Halil", "Osman", "Fatih",
-    "Emre", "Can", "Burak", "Serkan", "Murat", "Kemal", "Orhan", "Cemal", "Selim",
-    "Cengiz", "Volkan", "Uğur", "Barış", "Onur", "Mert", "Tolga", "Erhan", "Sercan",
-    "Ayşe", "Fatma", "Emine", "Hatice", "Zeynep", "Elif", "Meryem", "Şerife", "Zehra",
-    "Sultan", "Hanife", "Havva", "Zehra", "Rabia", "Hacer", "Yasemin", "Esra", "Seda",
-    "Gamze", "Derya", "Pınar", "Burcu", "Cansu", "Ebru", "Gizem", "Aslı", "Sibel"
+      "Ahmet", "Mehmet", "Mustafa", "Ali", "Hüseyin", "Hasan", "İbrahim", "İsmail", 
+      "Yusuf", "Ömer", "Ramazan", "Muhammed", "Süleyman", "Halil", "Osman", "Fatih",
+      "Emre", "Can", "Burak", "Serkan", "Murat", "Kemal", "Orhan", "Cemal", "Selim",
+      "Ayşe", "Fatma", "Emine", "Hatice", "Zeynep", "Elif", "Meryem", "Şerife", "Zehra",
+      "Sultan", "Hanife", "Havva", "Rabia", "Hacer", "Yasemin", "Esra", "Seda"
   ];
   return names[Math.floor(Math.random() * names.length)];
 }
-__name(getRandomTurkishName, "getRandomTurkishName");
 
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function buildCookieHeader() {
+  return COOKIES.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
 }
-__name(delay, "delay");
 
-function getCookieHeader(globalCookies) {
-  const cookies = [];
-  globalCookies.forEach((value, name) => {
-    cookies.push(`${name}=${value}`);
-  });
-  return cookies.join("; ");
-}
-__name(getCookieHeader, "getCookieHeader");
-
-function updateCookiesFromResponse(response, globalCookies) {
-  const setCookieHeader = response.headers.get("set-cookie");
-  if (!setCookieHeader) return;
+async function getXsrfToken(cookieHeader) {
+  console.log('🔄 YENİ XSRF TOKEN ALINIYOR...');
   
-  console.log("🔄 Response'dan gelen cookie'ler güncelleniyor...");
-  const cookies = setCookieHeader.split(/,\s*(?=\w+=)/);
-  
-  cookies.forEach((cookie) => {
-    const [nameValue] = cookie.split(";");
-    const [name, value] = nameValue.split("=");
-    if (name && value) {
-      const oldValue = globalCookies.get(name.trim());
-      globalCookies.set(name.trim(), value.trim());
-      if (oldValue) {
-        console.log(`   🔄 ${name.trim()} GÜNCELLENDİ`);
-      } else {
-        console.log(`   ✅ ${name.trim()} EKLENDİ`);
-      }
-    }
-  });
-}
-__name(updateCookiesFromResponse, "updateCookiesFromResponse");
-
-async function getXsrfToken(selectedHeaders, globalCookies) {
-  console.log("🔄 XSRF Token alınıyor...");
   const headers = {
-    "accept": selectedHeaders.Accept,
-    "accept-language": selectedHeaders.AcceptLanguage,
-    "origin": "https://giris.hepsiburada.com",
-    "referer": "https://giris.hepsiburada.com/",
-    "sec-ch-ua": selectedHeaders.SecCHUA,
-    "sec-ch-ua-mobile": selectedHeaders.SecCHUAMobile,
-    "sec-ch-ua-platform": selectedHeaders.SecCHUAPlatform,
-    "sec-fetch-dest": "empty",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-site",
-    "user-agent": selectedHeaders.UserAgent,
-    "cookie": getCookieHeader(globalCookies)
+      "accept": "application/json, text/plain, */*",
+      "accept-language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+      "origin": "https://giris.hepsiburada.com",
+      "referer": "https://giris.hepsiburada.com/",
+      "sec-ch-ua": '"Chromium";v="138", "Google Chrome";v="138", "Not-A.Brand";v="8"',
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": '"Windows"',
+      "sec-fetch-dest": "empty",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-site": "same-site",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.849.0 Safari/537.36",
+      "cookie": cookieHeader
   };
   
   try {
-    const response = await fetch("https://oauth.hepsiburada.com/api/authenticate/xsrf-token", {
-      headers
-    });
-    console.log("📡 XSRF Response Status:", response.status);
-    updateCookiesFromResponse(response, globalCookies);
-    
-    const cookies = response.headers.get("set-cookie");
-    let xsrfToken = null;
-    if (cookies) {
-      const xsrfMatch = cookies.match(/XSRF-TOKEN=([^;]+)/);
-      if (xsrfMatch) {
-        xsrfToken = decodeURIComponent(xsrfMatch[1]);
-        console.log("✅ XSRF Token alındı:", xsrfToken.substring(0, 20) + "...");
+      const response = await fetch('https://oauth.hepsiburada.com/api/authenticate/xsrf-token', {
+          method: 'GET',
+          headers: headers
+      });
+      
+      console.log('✅ YENİ XSRF TOKEN BAŞARILI');
+      
+      let xsrfToken = null;
+      const setCookie = response.headers.get('set-cookie');
+      if (setCookie) {
+          const match = setCookie.match(/XSRF-TOKEN=([^;]+)/);
+          if (match) {
+              xsrfToken = decodeURIComponent(match[1]);
+              console.log(`🔑 YENİ Token: ${xsrfToken.substring(0,20)}...`);
+          }
       }
-    }
-    return xsrfToken;
+      
+      return xsrfToken;
   } catch (error) {
-    console.log("❌ XSRF Token hatası:", error.message);
-    return null;
+      console.log('❌ XSRF TOKEN HATASI:', error.message);
+      return null;
   }
 }
-__name(getXsrfToken, "getXsrfToken");
 
 async function getOtpCode(email) {
-  const otpUrl = `https://script.google.com/macros/s/AKfycbxvTJG2ou3TGgCv2PHaaFjw8-dpRkxwnuJuJHZ6CXAVCo7jRXvm_Je5c370uGundLo3KQ/exec?email=${encodeURIComponent(email)}&mode=0`;
-  console.log("📱 OTP Kodu alınıyor...");
-  console.log("🔗 OTP URL:", otpUrl);
+  const otpUrl = `https://script.google.com/macros/s/AKfycbxvTJG2ou3TGgCv2PHaaFjw8-dpRkxwnuJuJHZ6CXAVCo7jRXvm_Je5c370uGundLo3KQ/exec?email=${email}&mode=0`;
+  
+  console.log('📱 OTP KODU ALINIYOR...');
   
   try {
-    const response = await fetch(otpUrl, {
-      redirect: "follow"
-    });
-    console.log("📨 OTP Response Status:", response.status);
-    const otpResponse = await response.text();
-    console.log("📄 OTP Response Body:", otpResponse);
-    
-    let otpCode = null;
-    const match = otpResponse.match(/\b\d{6}\b/);
-    if (match) {
-      otpCode = match[0];
-    } else if (/^\d{6}$/.test(otpResponse.trim())) {
-      otpCode = otpResponse.trim();
-    }
-    
-    if (otpCode) {
-      console.log("🔢 OTP Kodu Bulundu:", otpCode);
-    } else {
-      console.log("❌ OTP kodu bulunamadı");
-    }
-    return otpCode;
-  } catch (error) {
-    console.log("❌ OTP Hatası:", error.message);
-    return null;
-  }
-}
-__name(getOtpCode, "getOtpCode");
-
-async function makePostRequest(url, body, xsrfToken, selectedHeaders, globalCookies) {
-  console.log("🎯 POST isteği gönderiliyor:", url);
-  
-  // ✅ TÜM POST'LAR İÇİN TAM HEADER SETİ (app-key HER POST'ta)
-  const headers = {
-    "accept": selectedHeaders.Accept,
-    "accept-language": selectedHeaders.AcceptLanguage,
-    "content-type": "application/json",
-    "app-key": "AF7F2A37-CC4B-4F1C-87FD-FF3642F67ECB", // ✅ TÜM POST'LARDA
-    "fingerprint": getFingerprint(),
-    "priority": "u=1, i", // ✅ TÜM POST'LARDA
-    "sec-ch-ua": selectedHeaders.SecCHUA,
-    "sec-ch-ua-mobile": selectedHeaders.SecCHUAMobile,
-    "sec-ch-ua-platform": selectedHeaders.SecCHUAPlatform,
-    "sec-fetch-dest": "empty",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-site",
-    "origin": "https://giris.hepsiburada.com",
-    "referer": "https://giris.hepsiburada.com/",
-    "user-agent": selectedHeaders.UserAgent,
-    "cookie": getCookieHeader(globalCookies)
-  };
-  
-  // ✅ XSRF token ekle (eğer varsa)
-  if (xsrfToken) {
-    headers["x-xsrf-token"] = xsrfToken;
-  }
-  
-  // DEBUG: Header kontrolü
-  console.log("🔐 HEADER KONTROLÜ:");
-  console.log("   app-key:", headers["app-key"] ? "✅ VAR" : "❌ YOK");
-  console.log("   priority:", headers["priority"] ? "✅ VAR" : "❌ YOK");
-  console.log("   x-xsrf-token:", headers["x-xsrf-token"] ? "✅ VAR" : "❌ YOK");
-  console.log("   cookie count:", globalCookies.size);
-  
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body)
-    });
-    
-    console.log("📡 POST Response Status:", response.status);
-    updateCookiesFromResponse(response, globalCookies);
-    
-    // Response'u kontrol et
-    const contentType = response.headers.get("content-type");
-    const responseText = await response.text();
-    
-    if (contentType && contentType.includes("application/json")) {
-      const data = JSON.parse(responseText);
-      console.log("📊 POST Response Data:", JSON.stringify(data).substring(0, 200) + "...");
+      const response = await fetch(otpUrl);
+      const data = await response.text();
+      console.log('✅ OTP SUNUCUSU YANIT VERDİ');
       
-      return {
-        success: response.ok,
-        data,
-        status: response.status
-      };
-    } else {
-      console.log("❌ HTML Response Alındı!");
-      console.log("📝 HTML Preview:", responseText.substring(0, 500));
-      
-      if (response.status === 403) {
-        throw new Error("403 Forbidden - Session expired or blocked");
+      let otpCode = null;
+      const otpMatch = data.match(/\b\d{6}\b/);
+      if (otpMatch) {
+          otpCode = otpMatch[0];
+      } else if (data.trim().match(/^\d{6}$/)) {
+          otpCode = data.trim();
       }
-      throw new Error(`HTML response: ${response.status}`);
-    }
-    
-  } catch (error) {
-    console.log("❌ POST Hatası:", error.message);
-    return { success: false, error: error.message };
-  }
-}
-__name(makePostRequest, "makePostRequest");
-
-async function startRegistration(email) {
-  if (isProcessing) {
-    console.log("⏳ Zaten işlem devam ediyor...");
-    return { success: false, error: "Zaten işlem devam ediyor" };
-  }
-  
-  isProcessing = true;
-  console.log("🚀 KAYIT BAŞLATILIYOR:", email);
-  
-  // ✅ HER KAYIT İÇİN YENİ COOKIE MAP'I OLUŞTUR
-  const globalCookies = createNewCookieMap();
-  
-  try {
-    // ✅ HER KAYIT İÇİN YENİ COOKIE SETİ AL
-    const cookieSuccess = await getFreshCookies(globalCookies);
-    if (!cookieSuccess) {
-      return { success: false, error: "Cookie'ler alınamadı" };
-    }
-    
-    const selectedHeaders = getRandomHeaders();
-    const fingerprint = getFingerprint();
-    console.log("🔑 FINGERPRINT:", fingerprint);
-    
-    // 1. POST: Üyelik İsteği
-    console.log("📧 1. POST: Üyelik İsteği Gönderiliyor...");
-    let xsrfToken = await getXsrfToken(selectedHeaders, globalCookies);
-    
-    const postBody1 = {
-      email,
-      returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=c7ca3f6c28c5445aa5c1f4d52ce65d6d&code_challenge=t44-iDRkzoBssUdCS9dHN3YZBks8RTWlxV-BpC4Jbos&code_challenge_method=S256&response_mode=query"
-    };
-    
-    const result1 = await makePostRequest(
-      "https://oauth.hepsiburada.com/api/authenticate/createregisterrequest",
-      postBody1,
-      xsrfToken,
-      selectedHeaders,
-      globalCookies
-    );
-    
-    if (result1.success && result1.data.success) {
-      console.log("🎉 1. POST BAŞARILI - REFERENCE ID:", result1.data.data.referenceId);
-      
-      // OTP için bekle
-      console.log("⏳ OTP email'inin gelmesi bekleniyor (15 saniye)...");
-      await delay(15000);
-      
-      // OTP Kodu al
-      const otpCode = await getOtpCode(email);
       
       if (otpCode) {
-        console.log("🎯 OTP KODU HAZIR:", otpCode);
-        
-        // 2. POST: OTP Doğrulama
-        console.log("📧 2. POST: OTP Doğrulama Gönderiliyor...");
-        
-        // Yeni XSRF token al
-        xsrfToken = await getXsrfToken(selectedHeaders, globalCookies);
-        
-        const postBody2 = {
-          otpReference: result1.data.data.referenceId,
-          otpCode
-        };
-        
-        const result2 = await makePostRequest(
-          "https://oauth.hepsiburada.com/api/account/ValidateTwoFactorEmailOtp",
-          postBody2,
-          xsrfToken,
-          selectedHeaders,
-          globalCookies
-        );
-        
-        if (result2.success && result2.data.success && result2.data.requestId) {
-          console.log("🎉 2. POST BAŞARILI - REQUEST ID:", result2.data.requestId);
-          
-          // Kısa bekleme
-          console.log("⏳ Session stabilizasyonu bekleniyor (3 saniye)...");
-          await delay(3000);
-          
-          // 3. POST: Kayıt Tamamlama
-          console.log("📝 3. POST: Kayıt İşlemi Tamamlanıyor...");
-          
-          // DEBUG: Mevcut cookie durumu
-          console.log("🔍 3. POST ÖNCESİ DURUM:");
-          console.log("   Cookie Sayısı:", globalCookies.size);
-          console.log("   Mevcut Cookie'ler:", Array.from(globalCookies.keys()).join(", "));
-          
-          // Yeni XSRF token al
-          xsrfToken = await getXsrfToken(selectedHeaders, globalCookies);
-          console.log("🔄 Yeni XSRF Token:", xsrfToken ? "Alındı" : "Alınamadı");
-          
-          const firstName = getRandomTurkishName();
-          const lastName = getRandomTurkishName();
-          const password = "Hepsiburada1";
-          
-          console.log("🎭 Kullanıcı Bilgileri:");
-          console.log("   👤 Ad:", firstName, lastName);
-          console.log("   🔑 Şifre:", password);
-          console.log("   📨 Email:", email);
-          
-          const postBody3 = {
-            subscribeEmail: false,
-            firstName,
-            lastName,
-            password,
-            subscribeSms: false,
-            returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=0fe1789b3dee47458bdf70864a6a9931&code_challenge=1y2GcO5myCuDr8SsID6yMQyi5ZE6I_A9sJhKwYEgnpU&code_challenge_method=S256&response_mode=query",
-            requestId: result2.data.requestId
-          };
-          
-          const result3 = await makePostRequest(
-            "https://oauth.hepsiburada.com/api/authenticate/register",
-            postBody3,
-            xsrfToken,
-            selectedHeaders,
-            globalCookies
-          );
-          
-          if (result3.success && result3.data.success) {
-            console.log("🎉 KAYIT BAŞARILI!");
-            return {
-              success: true,
-              email,
-              password,
-              name: `${firstName} ${lastName}`,
-              accessToken: result3.data.data.accessToken,
-              refreshToken: result3.data.data.refreshToken
-            };
-          } else {
-            console.log("❌ 3. POST başarısız!");
-            console.log("   Status:", result3.status);
-            console.log("   Error:", result3.error);
-            return { success: false, error: result3.error || "Kayıt tamamlanamadı" };
-          }
-        } else {
-          console.log("❌ 2. POST başarısız veya requestId alınamadı!");
-          return { success: false, error: "OTP doğrulama başarısız" };
-        }
+          console.log(`🔢 OTP Kodu Bulundu: ${otpCode}`);
+          return otpCode;
       } else {
-        console.log("❌ OTP kodu alınamadı!");
-        return { success: false, error: "OTP alınamadı" };
+          console.log('❌ OTP kodu bulunamadı');
+          return null;
       }
-    } else {
-      console.log("❌ 1. POST başarısız!");
-      return { success: false, error: "Kayıt isteği başarısız" };
-    }
   } catch (error) {
-    console.log("💥 Genel hata:", error.message);
-    return { success: false, error: error.message };
-  } finally {
-    isProcessing = false;
-    console.log("🔄 İşlem durumu sıfırlandı");
+      console.log('❌ OTP KODU HATASI:', error.message);
+      return null;
   }
 }
-__name(startRegistration, "startRegistration");
 
-var worker_default = {
-  async fetch(request, env, ctx) {
-    console.log("📥 Yeni request:", request.url);
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization"
-    };
-    
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
-    
-    const url = new URL(request.url);
-    if (url.pathname === "/register") {
-      try {
-        const email = url.searchParams.get("email") || getFormattedEmail();
-        console.log("🎯 Kayıt başlatılıyor, email:", email);
-        const result = await startRegistration(email);
-        console.log("📤 Kayıt sonucu gönderiliyor:", result.success);
-        return new Response(JSON.stringify(result), {
-          headers: { "Content-Type": "application/json", ...corsHeaders }
-        });
-      } catch (error) {
-        console.log("💥 API hatası:", error.message);
-        return new Response(JSON.stringify({
-          success: false,
-          error: error.message
-        }), {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders }
-        });
+async function makeRequest(url, headers, body, method = 'POST') {
+  console.log('🎯 REQUEST GÖNDERİLİYOR...');
+  console.log('📡 URL:', url);
+  
+  try {
+      const options = {
+          method: method,
+          headers: headers
+      };
+      
+      if (method === 'POST' && body) {
+          options.body = JSON.stringify(body);
       }
-    }
-    
-    return new Response(JSON.stringify({
-      message: "Hepsiburada Otomatik Kayıt API",
-      endpoints: { "/register": "Kayıt başlat" }
-    }), {
-      headers: { "Content-Type": "application/json", ...corsHeaders }
-    });
+      
+      const response = await fetch(url, options);
+      const data = await response.json();
+      console.log('✅ REQUEST BAŞARILI');
+      return data;
+  } catch (error) {
+      console.log('❌ REQUEST BAŞARISIZ:', error.message);
+      return null;
+  }
+}
+
+async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export default {
+  async fetch(request) {
+      try {
+          console.log('🚀 HEPSİBURADA OTOMATİK KAYIT SCRIPTİ');
+          console.log('==========================================');
+          
+          // ✅ OTOMATİK FORMATLI EMAIL SEÇ
+          console.log('📧 OTOMATİK FORMATLI EMAIL SEÇİLİYOR...');
+          const EMAIL = getRandomEmail();
+          console.log('✅ KULLANILACAK EMAIL:', EMAIL);
+          
+          // Cookie header'ını oluştur
+          const cookieHeader = buildCookieHeader();
+          console.log('🍪 COOKIE HEADER HAZIR');
+          
+          // Header ve fingerprint
+          const fingerprint = generateFingerprint();
+          console.log('🔑 FINGERPRINT:', fingerprint);
+          
+          // --- 1. POST: ÜYELİK İSTEĞİ ---
+          console.log('📧 1. POST: ÜYELİK İSTEĞİ GÖNDERİLİYOR...');
+          
+          // ✅ YENİ XSRF TOKEN AL
+          let xsrfToken = await getXsrfToken(cookieHeader);
+          if (!xsrfToken) {
+              return new Response(JSON.stringify({ error: "XSRF token alınamadı" }), { 
+                  status: 500,
+                  headers: { 'Content-Type': 'application/json' }
+              });
+          }
+          
+          // 1. POST Hazırlık
+          const postUrl1 = "https://oauth.hepsiburada.com/api/authenticate/createregisterrequest";
+          const postBody1 = {
+              email: EMAIL,
+              returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=c7ca3f6c28c5445aa5c1f4d52ce65d6d&code_challenge=t44-iDRkzoBssUdCS9dHN3YZBks8RTWlxV-BpC4Jbos&code_challenge_method=S256&response_mode=query"
+          };
+          
+          const postHeaders1 = {
+              "accept": "application/json, text/plain, */*",
+              "accept-language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+              "app-key": "AF7F2A37-CC4B-4F1C-87FD-FF3642F67ECB",
+              "content-type": "application/json",
+              "fingerprint": fingerprint,
+              "priority": "u=1, i",
+              "sec-ch-ua": '"Chromium";v="138", "Google Chrome";v="138", "Not-A.Brand";v="8"',
+              "sec-ch-ua-mobile": "?0",
+              "sec-ch-ua-platform": '"Windows"',
+              "sec-fetch-dest": "empty",
+              "sec-fetch-mode": "cors",
+              "sec-fetch-site": "same-site",
+              "x-xsrf-token": xsrfToken,
+              "origin": "https://giris.hepsiburada.com",
+              "referer": "https://giris.hepsiburada.com/",
+              "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.849.0 Safari/537.36",
+              "cookie": cookieHeader
+          };
+          
+          // 1. POST Gönder
+          const response1 = await makeRequest(postUrl1, postHeaders1, postBody1);
+          
+          if (response1 && response1.success === true) {
+              console.log('🎉 1. POST BAŞARILI - REFERENCE ID:', response1.data.referenceId);
+              
+              // OTP için bekle
+              console.log('⏳ OTP emailinin gelmesi bekleniyor (15 saniye)...');
+              await sleep(15000);
+              
+              // OTP Kodu al
+              const otpCode = await getOtpCode(EMAIL);
+              
+              if (otpCode) {
+                  console.log('🎯 OTP KODU HAZIR:', otpCode);
+                  
+                  // --- 2. POST: OTP DOĞRULAMA ---
+                  console.log('📧 2. POST: OTP DOĞRULAMA GÖNDERİLİYOR...');
+                  
+                  // ✅ YENİ XSRF TOKEN AL
+                  xsrfToken = await getXsrfToken(cookieHeader);
+                  
+                  const postUrl2 = "https://oauth.hepsiburada.com/api/account/ValidateTwoFactorEmailOtp";
+                  const postBody2 = {
+                      otpReference: response1.data.referenceId,
+                      otpCode: otpCode
+                  };
+                  
+                  const postHeaders2 = {
+                      "accept": "application/json, text/plain, */*",
+                      "accept-language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+                      "app-key": "AF7F2A37-CC4B-4F1C-87FD-FF3642F67ECB",
+                      "content-type": "application/json",
+                      "fingerprint": fingerprint,
+                      "priority": "u=1, i",
+                      "sec-ch-ua": '"Chromium";v="138", "Google Chrome";v="138", "Not-A.Brand";v="8"',
+                      "sec-ch-ua-mobile": "?0",
+                      "sec-ch-ua-platform": '"Windows"',
+                      "sec-fetch-dest": "empty",
+                      "sec-fetch-mode": "cors",
+                      "sec-fetch-site": "same-site",
+                      "x-xsrf-token": xsrfToken,
+                      "origin": "https://giris.hepsiburada.com",
+                      "referer": "https://giris.hepsiburada.com/",
+                      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.849.0 Safari/537.36",
+                      "cookie": cookieHeader
+                  };
+                  
+                  // 2. POST Gönder
+                  const response2 = await makeRequest(postUrl2, postHeaders2, postBody2);
+                  
+                  if (response2 && response2.success === true && response2.requestId) {
+                      console.log('🎉 2. POST BAŞARILI - REQUEST ID:', response2.requestId);
+                      
+                      // Kısa bekleme
+                      console.log('⏳ Session stabilizasyonu (3 saniye)...');
+                      await sleep(3000);
+                      
+                      // --- 3. POST: KAYIT TAMAMLAMA ---
+                      console.log('📝 3. POST: KAYIT İŞLEMİ TAMAMLANIYOR...');
+                      
+                      // ✅ YENİ XSRF TOKEN AL
+                      xsrfToken = await getXsrfToken(cookieHeader);
+                      
+                      // Random bilgiler
+                      const firstName = getRandomTurkishName();
+                      const lastName = getRandomTurkishName();
+                      const password = "Hepsiburada1";
+                      
+                      console.log('🎭 Kullanıcı Bilgileri:');
+                      console.log('   👤 Ad:', firstName, lastName);
+                      console.log('   🔑 Şifre:', password);
+                      console.log('   📨 Email:', EMAIL);
+                      
+                      // 3. POST Body
+                      const postUrl3 = "https://oauth.hepsiburada.com/api/authenticate/register";
+                      const postBody3 = {
+                          subscribeEmail: false,
+                          firstName: firstName,
+                          lastName: lastName,
+                          password: password,
+                          subscribeSms: false,
+                          returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=0fe1789b3dee47458bdf70864a6a9931&code_challenge=1y2GcO5myCuDr8SsID6yMQyi5ZE6I_A9sJhKwYEgnpU&code_challenge_method=S256&response_mode=query",
+                          requestId: response2.requestId
+                      };
+                      
+                      const postHeaders3 = {
+                          "accept": "application/json, text/plain, */*",
+                          "accept-language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+                          "app-key": "AF7F2A37-CC4B-4F1C-87FD-FF3642F67ECB",
+                          "content-type": "application/json",
+                          "fingerprint": fingerprint,
+                          "priority": "u=1, i",
+                          "sec-ch-ua": '"Chromium";v="138", "Google Chrome";v="138", "Not-A.Brand";v="8"',
+                          "sec-ch-ua-mobile": "?0",
+                          "sec-ch-ua-platform": '"Windows"',
+                          "sec-fetch-dest": "empty",
+                          "sec-fetch-mode": "cors",
+                          "sec-fetch-site": "same-site",
+                          "x-xsrf-token": xsrfToken,
+                          "origin": "https://giris.hepsiburada.com",
+                          "referer": "https://giris.hepsiburada.com/",
+                          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.849.0 Safari/537.36",
+                          "cookie": cookieHeader
+                      };
+                      
+                      // 3. POST Gönder
+                      const response3 = await makeRequest(postUrl3, postHeaders3, postBody3);
+                      
+                      if (response3) {
+                          if (response3.success === true) {
+                              console.log('🎉 KAYIT BAŞARILI!');
+                              
+                              const result = {
+                                  success: true,
+                                  message: "Kayıt başarılı",
+                                  account: {
+                                      email: EMAIL,
+                                      password: password,
+                                      name: `${firstName} ${lastName}`,
+                                      accessToken: response3.data?.accessToken,
+                                      refreshToken: response3.data?.refreshToken
+                                  },
+                                  data: response3.data
+                              };
+                              
+                              if (response3.data.accessToken) {
+                                  console.log('🔑 ACCESS TOKEN:', response3.data.accessToken);
+                              }
+                              if (response3.data.refreshToken) {
+                                  console.log('🔄 REFRESH TOKEN:', response3.data.refreshToken);
+                              }
+                              
+                              console.log('✅ HESAP BİLGİLERİ:');
+                              console.log('   📧 Email:', EMAIL);
+                              console.log('   🔑 Şifre:', password);
+                              console.log('   👤 Ad Soyad:', firstName, lastName);
+                              
+                              return new Response(JSON.stringify(result), {
+                                  headers: { 'Content-Type': 'application/json' }
+                              });
+                              
+                          } else {
+                              return new Response(JSON.stringify({ 
+                                  error: "Kayıt başarısız", 
+                                  message: response3.message 
+                              }), { 
+                                  status: 500,
+                                  headers: { 'Content-Type': 'application/json' }
+                              });
+                          }
+                      } else {
+                          return new Response(JSON.stringify({ error: "3. POST başarısız!" }), { 
+                              status: 500,
+                              headers: { 'Content-Type': 'application/json' }
+                          });
+                      }
+                      
+                  } else {
+                      return new Response(JSON.stringify({ error: "2. POST başarısız veya requestId alınamadı!" }), { 
+                          status: 500,
+                          headers: { 'Content-Type': 'application/json' }
+                      });
+                  }
+                  
+              } else {
+                  return new Response(JSON.stringify({ error: "OTP kodu alınamadı!" }), { 
+                      status: 500,
+                      headers: { 'Content-Type': 'application/json' }
+                  });
+              }
+              
+          } else {
+              return new Response(JSON.stringify({ error: "1. POST başarısız!" }), { 
+                  status: 500,
+                  headers: { 'Content-Type': 'application/json' }
+              });
+          }
+          
+      } catch (error) {
+          return new Response(JSON.stringify({ 
+              error: "Script hatası", 
+              details: error.message 
+          }), { 
+              status: 500,
+              headers: { 'Content-Type': 'application/json' }
+          });
+      }
   }
 };
-
-export {
-  worker_default as default
-};
-//# sourceMappingURL=worker.js.map

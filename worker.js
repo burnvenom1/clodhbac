@@ -90,13 +90,69 @@ var isProcessing = false;
 // Cookie API endpoint
 const COOKIE_API_URL = "https://burnrndr.onrender.com/last-cookies";
 
-// Header sets
+// Header sets - Çeşitli browser/platform kombinasyonları
 var HEADER_SETS = [
-  {
+  { // 1 - Windows 11 Chrome
     "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.849.0 Safari/537.36",
     "SecCHUA": '"Chromium";v="138", "Google Chrome";v="138", "Not-A.Brand";v="8"',
     "SecCHUAMobile": "?0",
     "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
+  },
+  { // 2 - Windows 10 Edge
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.5845.188 Safari/537.36 Edg/116.0.1938.81",
+    "SecCHUA": '"Chromium";v="116", "Microsoft Edge";v="116", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
+  },
+  { // 3 - Windows Firefox
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "SecCHUA": '"Not-A.Brand";v="8", "Firefox";v="121"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
+  },
+  { // 4 - macOS Safari
+    "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+    "SecCHUA": '"Not-A.Brand";v="8", "Safari";v="18"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"macOS"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "en-US,en;q=0.9,tr-TR;q=0.8,tr;q=0.7"
+  },
+  { // 5 - macOS Chrome
+    "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.849.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="138", "Google Chrome";v="138", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"macOS"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "en-US,en;q=0.9,tr-TR;q=0.8,tr;q=0.7"
+  },
+  { // 6 - Linux Chrome
+    "UserAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.849.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="138", "Google Chrome";v="138", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Linux"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "en-US,en;q=0.9,tr-TR;q=0.8,tr;q=0.7"
+  },
+  { // 7 - Android Chrome (mobile)
+    "UserAgent": "Mozilla/5.0 (Linux; Android 13; SM-G998B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.849.0 Mobile Safari/537.36",
+    "SecCHUA": '"Chromium";v="138", "Google Chrome";v="138", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?1",
+    "SecCHUAPlatform": '"Android"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
+  },
+  { // 8 - iPhone Safari (mobile)
+    "UserAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+    "SecCHUA": '"Not-A.Brand";v="8", "Safari";v="18"',
+    "SecCHUAMobile": "?1",
+    "SecCHUAPlatform": '"iOS"',
     "Accept": "application/json, text/plain, */*",
     "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
   }
@@ -141,7 +197,12 @@ async function getFreshCookies(globalCookies) {
 __name(getFreshCookies, "getFreshCookies");
 
 function getRandomHeaders() {
-  return HEADER_SETS[Math.floor(Math.random() * HEADER_SETS.length)];
+  const selected = HEADER_SETS[Math.floor(Math.random() * HEADER_SETS.length)];
+  console.log("🖥️ Seçilen Header Seti:");
+  console.log("   Platform:", selected.SecCHUAPlatform);
+  console.log("   Browser:", selected.UserAgent.split(' ')[2]);
+  console.log("   Mobile:", selected.SecCHUAMobile);
+  return selected;
 }
 __name(getRandomHeaders, "getRandomHeaders");
 
@@ -297,13 +358,14 @@ __name(getOtpCode, "getOtpCode");
 async function makePostRequest(url, body, xsrfToken, selectedHeaders, globalCookies) {
   console.log("🎯 POST isteği gönderiliyor:", url);
   
+  // ✅ TÜM POST'LAR İÇİN TAM HEADER SETİ (app-key HER POST'ta)
   const headers = {
     "accept": selectedHeaders.Accept,
     "accept-language": selectedHeaders.AcceptLanguage,
     "content-type": "application/json",
-    "app-key": "AF7F2A37-CC4B-4F1C-87FD-FF3642F67ECB",
+    "app-key": "AF7F2A37-CC4B-4F1C-87FD-FF3642F67ECB", // ✅ TÜM POST'LARDA
     "fingerprint": getFingerprint(),
-    "priority": "u=1, i",
+    "priority": "u=1, i", // ✅ TÜM POST'LARDA
     "sec-ch-ua": selectedHeaders.SecCHUA,
     "sec-ch-ua-mobile": selectedHeaders.SecCHUAMobile,
     "sec-ch-ua-platform": selectedHeaders.SecCHUAPlatform,
@@ -316,9 +378,17 @@ async function makePostRequest(url, body, xsrfToken, selectedHeaders, globalCook
     "cookie": getCookieHeader(globalCookies)
   };
   
+  // ✅ XSRF token ekle (eğer varsa)
   if (xsrfToken) {
     headers["x-xsrf-token"] = xsrfToken;
   }
+  
+  // DEBUG: Header kontrolü
+  console.log("🔐 HEADER KONTROLÜ:");
+  console.log("   app-key:", headers["app-key"] ? "✅ VAR" : "❌ YOK");
+  console.log("   priority:", headers["priority"] ? "✅ VAR" : "❌ YOK");
+  console.log("   x-xsrf-token:", headers["x-xsrf-token"] ? "✅ VAR" : "❌ YOK");
+  console.log("   cookie count:", globalCookies.size);
   
   try {
     const response = await fetch(url, {

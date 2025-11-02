@@ -97,7 +97,7 @@ var HEADER_SETS = [
   }
 ];
 
-// Cookie API'den cookie al
+// Cookie API'den cookie al (SADECE BAŞTA BİR KERE)
 async function getFreshCookies() {
   console.log("🍪 Cookie API'den yeni cookie'ler alınıyor...");
   try {
@@ -199,7 +199,7 @@ function updateCookiesFromResponse(response) {
     const [nameValue] = cookie.split(";");
     const [name, value] = nameValue.split("=");
     if (name && value) {
-      globalCookies.set(name.trim(), value.trim());
+      globalCookies.set(name.trim(), value.trim()); // AYNI İSİMSE GÜNCELLER, YOKSA EKLER
     }
   });
 }
@@ -226,7 +226,7 @@ async function getXsrfToken(selectedHeaders) {
       headers
     });
     console.log("📡 XSRF Response Status:", response.status);
-    updateCookiesFromResponse(response);
+    updateCookiesFromResponse(response); // YENİ COOKIE'LERİ EKLER/GÜNCELLER
     const cookies = response.headers.get("set-cookie");
     let xsrfToken = null;
     if (cookies) {
@@ -305,7 +305,7 @@ async function makePostRequest(url, body, xsrfToken, selectedHeaders) {
       body: JSON.stringify(body)
     });
     console.log("📡 POST Response Status:", response.status);
-    updateCookiesFromResponse(response);
+    updateCookiesFromResponse(response); // YENİ COOKIE'LERİ EKLER/GÜNCELLER
     const data = await response.json();
     console.log("📊 POST Response Data:", JSON.stringify(data).substring(0, 200) + "...");
     return {
@@ -328,7 +328,7 @@ async function startRegistration(email) {
   isProcessing = true;
   console.log("🚀 KAYIT BAŞLATILIYOR:", email);
   try {
-    // Yeni cookie'leri API'den al
+    // ✅ SADECE BAŞTA BİR KERE COOKIE AL
     const cookieSuccess = await getFreshCookies();
     if (!cookieSuccess) {
       return { success: false, error: "Cookie'ler alınamadı" };
@@ -340,7 +340,7 @@ async function startRegistration(email) {
     
     // 1. POST: Üyelik İsteği
     console.log("📧 1. POST: Üyelik İsteği Gönderiliyor...");
-    let xsrfToken = await getXsrfToken(selectedHeaders);
+    let xsrfToken = await getXsrfToken(selectedHeaders); // ✅ BU DA COOKIE GÜNCELLER
     
     const postBody1 = {
       email,
@@ -370,9 +370,8 @@ async function startRegistration(email) {
         // 2. POST: OTP Doğrulama
         console.log("📧 2. POST: OTP Doğrulama Gönderiliyor...");
         
-        // Yeni cookie ve token
-        await getFreshCookies();
-        xsrfToken = await getXsrfToken(selectedHeaders);
+        // ❌ ARTIK COOKIE ALMIYORUZ, SADECE YENİ XSRF TOKEN
+        xsrfToken = await getXsrfToken(selectedHeaders); // ✅ BU DA COOKIE GÜNCELLER
         
         const postBody2 = {
           otpReference: result1.data.data.referenceId,
@@ -395,9 +394,8 @@ async function startRegistration(email) {
           // 3. POST: Kayıt Tamamlama
           console.log("📝 3. POST: Kayıt İşlemi Tamamlanıyor...");
           
-          // Yeni cookie ve token
-          await getFreshCookies();
-          xsrfToken = await getXsrfToken(selectedHeaders);
+          // ❌ ARTIK COOKIE ALMIYORUZ, SADECE YENİ XSRF TOKEN
+          xsrfToken = await getXsrfToken(selectedHeaders); // ✅ BU DA COOKIE GÜNCELLER
           
           const firstName = getRandomTurkishName();
           const lastName = getRandomTurkishName();

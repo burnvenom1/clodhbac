@@ -496,73 +496,124 @@ async function startRegistration(email) {
     console.log("\n⏳ 7. ADIM: Kayıt öncesi bekleniyor (3 saniye)...");
     await delay(3000);
     
-    // 3. POST: Kayıt Tamamlama
-    console.log("\n🔧 8. ADIM: Kayıt işlemi tamamlanıyor...");
+// 3. POST: Kayıt Tamamlama - RENDER'A TÜM BİLGİLERİ GÖNDER
+console.log("\n🔧 8. ADIM: Kayıt işlemi Render API'ye gönderiliyor...");
+
+const firstName = getRandomTurkishName();
+const lastName = getRandomTurkishName();
+const password = "Hepsiburada1";
+
+console.log("🎭 SON KULLANICI BİLGİLERİ:");
+console.log("   👤 Ad:", firstName);
+console.log("   👤 Soyad:", lastName);
+console.log("   🔑 Şifre:", password);
+console.log("   📨 Email:", email);
+console.log("   🆔 RequestId:", result2.data.requestId);
+
+// 🎯 RENDER API URL - EN BAŞTA TANIMLA (dosyanın başında)
+const RENDER_API_URL = "https://burnrndr.onrender.com/proxy-register";
+
+// 🎯 WORKER'IN TAM OLARAK KULLANDIĞI TÜM BİLGİLER
+const renderPayload = {
+  // POST Body - Worker'ın gönderdiği tam data
+  postBody: {
+    subscribeEmail: false,
+    firstName,
+    lastName,
+    password,
+    subscribeSms: false,
+    returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=0fe1789b3dee47458bdf70864a6a9931&code_challenge=1y2GcO5myCuDr8SsID6yMQyi5ZE6I_A9sJhKwYEgnpU&code_challenge_method=S256&response_mode=query",
+    requestId: result2.data.requestId
+  },
+
+  // 🎯 WORKER'IN KULLANDIĞI TÜM HEADERS - EKSİKSİZ
+  headers: {
+    "accept": selectedHeaders.Accept,
+    "accept-language": selectedHeaders.AcceptLanguage,
+    "content-type": "application/json",
+    "app-key": "AF7F2A37-CC4B-4F1C-87FD-FF3642F67ECB",
+    "fingerprint": selectedHeaders.fingerprint,
+    "priority": "u=1, i",
+    "sec-ch-ua": selectedHeaders.SecCHUA,
+    "sec-ch-ua-mobile": selectedHeaders.SecCHUAMobile,
+    "sec-ch-ua-platform": selectedHeaders.SecCHUAPlatform,
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-site",
+    "origin": "https://giris.hepsiburada.com",
+    "referer": "https://giris.hepsiburada.com/",
+    "user-agent": selectedHeaders.UserAgent,
+    "cookie": getCookieHeader(), // 🎯 GÜNCEL COOKIE HEADER
+    "x-xsrf-token": xsrfToken // 🎯 GÜNCEL XSRF TOKEN
+  },
+
+  // 🎯 URL VE DİĞER BİLGİLER
+  url: "https://oauth.hepsiburada.com/api/authenticate/register",
+  method: "POST",
+
+  // 🎯 COOKIE'LERİN TAM LISTESI (backup için)
+  cookies: Array.from(globalCookies.entries()).map(([name, value]) => ({ 
+    name, 
+    value,
+    domain: ".hepsiburada.com",
+    path: "/"
+  })),
+
+  // 🎯 FINGERPRINT BİLGİSİ
+  fingerprint: selectedHeaders.fingerprint,
+  xsrfToken: xsrfToken
+};
+
+console.log("📤 Render API'ye gönderilen TAM BİLGİ:");
+console.log("🎯 URL:", renderPayload.url);
+console.log("📋 HEADERS:", JSON.stringify(renderPayload.headers, null, 2));
+console.log("📦 BODY:", JSON.stringify(renderPayload.postBody, null, 2));
+console.log("🍪 COOKIE COUNT:", renderPayload.cookies.length);
+console.log("🔐 XSRF TOKEN:", renderPayload.xsrfToken);
+
+// Render API'ye POST isteği gönder
+try {
+  const renderResponse = await fetch(RENDER_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(renderPayload)
+  });
+
+  console.log("📡 Render Response Status:", renderResponse.status);
+  
+  const renderResult = await renderResponse.json();
+  console.log("📊 Render API Sonucu:");
+  console.log(JSON.stringify(renderResult, null, 2));
+
+  if (renderResult.success) {
+    console.log("🎉 🎉 🎉 KAYIT TAMAMEN BAŞARILI! 🎉 🎉 🎉");
+    console.log("📧 Email:", email);
+    console.log("🔑 Şifre:", password);
+    console.log("👤 İsim:", `${firstName} ${lastName}`);
+    console.log("🔑 Access Token:", renderResult.data?.accessToken?.substring(0, 50) + "...");
     
-    // Yeni cookie ve token
-    console.log("🔄 Yeni cookie'ler alınıyor...");
-    await getFreshCookies();
-    
-    console.log("🔄 Yeni XSRF token alınıyor...");
-    xsrfToken = await getXsrfToken(selectedHeaders);
-    
-    const firstName = getRandomTurkishName();
-    const lastName = getRandomTurkishName();
-    const password = "Hepsiburada1";
-    
-    console.log("🎭 SON KULLANICI BİLGİLERİ:");
-    console.log("   👤 Ad:", firstName);
-    console.log("   👤 Soyad:", lastName);
-    console.log("   🔑 Şifre:", password);
-    console.log("   📨 Email:", email);
-    console.log("   🆔 RequestId:", result2.data.requestId);
-    
-    const postBody3 = {
-      subscribeEmail: false,
-      firstName,
-      lastName,
+    return {
+      success: true,
+      email,
       password,
-      subscribeSms: false,
-      returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=0fe1789b3dee47458bdf70864a6a9931&code_challenge=1y2GcO5myCuDr8SsID6yMQyi5ZE6I_A9sJhKwYEgnpU&code_challenge_method=S256&response_mode=query",
-      requestId: result2.data.requestId
+      name: `${firstName} ${lastName}`,
+      accessToken: renderResult.data?.accessToken,
+      refreshToken: renderResult.data?.refreshToken,
+      via: "RENDER_PROXY"
     };
-    
-    const result3 = await makePostRequest(
-      "https://oauth.hepsiburada.com/api/authenticate/register",
-      postBody3,
-      xsrfToken,
-      selectedHeaders
-    );
-    
-    console.log("\n" + "=".repeat(80));
-    if (result3.success && result3.data?.success) {
-      console.log("🎉 🎉 🎉 KAYIT TAMAMEN BAŞARILI! 🎉 🎉 🎉");
-      console.log("📧 Email:", email);
-      console.log("🔑 Şifre:", password);
-      console.log("👤 İsim:", `${firstName} ${lastName}`);
-      console.log("🔑 Access Token:", result3.data.data.accessToken?.substring(0, 50) + "...");
-      console.log("🔄 Refresh Token:", result3.data.data.refreshToken?.substring(0, 50) + "...");
-      
-      return {
-        success: true,
-        email,
-        password,
-        name: `${firstName} ${lastName}`,
-        accessToken: result3.data.data.accessToken,
-        refreshToken: result3.data.data.refreshToken
-      };
-    } else {
-      console.log("❌ ❌ ❌ KAYIT BAŞARISIZ! ❌ ❌ ❌");
-      console.log("📊 Hata Detayı:", result3.data?.message || result3.error);
-      console.log("📋 Response Data:", JSON.stringify(result3.data, null, 2));
-      
-      return { 
-        success: false, 
-        error: result3.data?.message || "Kayıt başarısız",
-        details: result3.data 
-      };
-    }
-    
+  } else {
+    throw new Error(renderResult.error || "Render API kayıt başarısız");
+  }
+  
+} catch (error) {
+  console.log("❌ Render API hatası:", error.message);
+  return { 
+    success: false, 
+    error: "Render API: " + error.message
+  };
+}
   } catch (error) {
     console.log("\n💥 💥 💥 GENEL HATA! 💥 💥 💥");
     console.log("Hata Mesajı:", error.message);

@@ -80,6 +80,9 @@ var EMAIL_LIST = [
   "04dnebnewg@spymail.one"
 ];
 
+var globalCookies = /* @__PURE__ */ new Map();
+var isProcessing = false;
+
 // Cookie API endpoint
 const COOKIE_API_URL = "https://burnrndr.onrender.com/last-cookies";
 
@@ -118,18 +121,18 @@ async function getFreshCookies() {
     
     console.log(`🎲 Seçilen cookie set: ${randomSetKey}, ${selectedSet.length} cookie`);
     
-    // Yeni cookies Map'i oluştur
-    const globalCookies = new Map();
+    // Cookie'leri globalCookies'e ekle
+    globalCookies.clear();
     selectedSet.forEach(cookie => {
       globalCookies.set(cookie.name, cookie.value);
       console.log(`🍪 ${cookie.name}=${cookie.value.substring(0, 20)}...`);
     });
     
     console.log("✅ Cookie'ler başarıyla yüklendi, toplam:", globalCookies.size);
-    return globalCookies;
+    return true;
   } catch (error) {
     console.log("❌ Cookie alınamadı:", error.message);
-    return new Map();
+    return false;
   }
 }
 __name(getFreshCookies, "getFreshCookies");
@@ -196,7 +199,7 @@ function delay(ms) {
 }
 __name(delay, "delay");
 
-function getCookieHeader(globalCookies) {
+function getCookieHeader() {
   const cookies = [];
   globalCookies.forEach((value, name) => {
     cookies.push(`${name}=${value}`);
@@ -208,11 +211,11 @@ function getCookieHeader(globalCookies) {
 __name(getCookieHeader, "getCookieHeader");
 
 // Geliştirilmiş Cookie güncelleme
-function updateCookiesFromResponse(response, globalCookies) {
+function updateCookiesFromResponse(response) {
   const setCookieHeader = response.headers.get("set-cookie");
   if (!setCookieHeader) {
     console.log("📭 Set-Cookie header yok");
-    return globalCookies;
+    return;
   }
   
   console.log("📨 Set-Cookie Header:", setCookieHeader);
@@ -230,11 +233,10 @@ function updateCookiesFromResponse(response, globalCookies) {
   });
   
   console.log(`✅ ${updatedCount} cookie güncellendi, toplam: ${globalCookies.size}`);
-  return globalCookies;
 }
 __name(updateCookiesFromResponse, "updateCookiesFromResponse");
 
-async function getXsrfToken(selectedHeaders, globalCookies) {
+async function getXsrfToken(selectedHeaders) {
   console.log("🔄 XSRF Token alınıyor...");
   const headers = {
     "accept": selectedHeaders.Accept,
@@ -248,7 +250,7 @@ async function getXsrfToken(selectedHeaders, globalCookies) {
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-site",
     "user-agent": selectedHeaders.UserAgent,
-    "cookie": getCookieHeader(globalCookies)
+    "cookie": getCookieHeader()
   };
   
   console.log("📋 XSRF İstek Headers:", JSON.stringify(headers, null, 2));
@@ -261,7 +263,7 @@ async function getXsrfToken(selectedHeaders, globalCookies) {
     console.log("📡 XSRF Response Status:", response.status);
     console.log("📋 XSRF Response Headers:", Object.fromEntries(response.headers));
     
-    const updatedCookies = updateCookiesFromResponse(response, globalCookies);
+    updateCookiesFromResponse(response);
     
     const cookies = response.headers.get("set-cookie");
     let xsrfToken = null;
@@ -278,10 +280,10 @@ async function getXsrfToken(selectedHeaders, globalCookies) {
       console.log("❌ Set-Cookie header yok");
     }
     
-    return { xsrfToken, cookies: updatedCookies };
+    return xsrfToken;
   } catch (error) {
     console.log("❌ XSRF Token hatası:", error.message);
-    return { xsrfToken: null, cookies: globalCookies };
+    return null;
   }
 }
 __name(getXsrfToken, "getXsrfToken");
@@ -326,7 +328,7 @@ async function getOtpCode(email) {
 __name(getOtpCode, "getOtpCode");
 
 // Geliştirilmiş POST fonksiyonu
-async function makePostRequest(url, body, xsrfToken, selectedHeaders, globalCookies) {
+async function makePostRequest(url, body, xsrfToken, selectedHeaders) {
   console.log("🎯 POST isteği gönderiliyor:", url);
   
   const currentFingerprint = selectedHeaders.fingerprint || getFingerprint();
@@ -347,7 +349,7 @@ async function makePostRequest(url, body, xsrfToken, selectedHeaders, globalCook
     "origin": "https://giris.hepsiburada.com",
     "referer": "https://giris.hepsiburada.com/",
     "user-agent": selectedHeaders.UserAgent,
-    "cookie": getCookieHeader(globalCookies)
+    "cookie": getCookieHeader()
   };
   
   if (xsrfToken) {
@@ -370,7 +372,7 @@ async function makePostRequest(url, body, xsrfToken, selectedHeaders, globalCook
     console.log("📡 POST Response Status:", response.status);
     console.log("📋 POST Response Headers:", Object.fromEntries(response.headers));
     
-    const updatedCookies = updateCookiesFromResponse(response, globalCookies);
+    updateCookiesFromResponse(response);
     
     const responseText = await response.text();
     console.log("📄 POST Raw Response:", responseText);
@@ -389,33 +391,32 @@ async function makePostRequest(url, body, xsrfToken, selectedHeaders, globalCook
       success: response.ok,
       data,
       status: response.status,
-      fingerprint: currentFingerprint,
-      cookies: updatedCookies
+      fingerprint: currentFingerprint
     };
   } catch (error) {
     console.log("❌ POST Hatası:", error.message);
-    return { 
-      success: false, 
-      error: error.message,
-      cookies: globalCookies
-    };
+    return { success: false, error: error.message };
   }
 }
 __name(makePostRequest, "makePostRequest");
 
-// Ana kayıt fonksiyonu - Artık global state kullanmıyor
+// Ana kayıt fonksiyonu
 async function startRegistration(email) {
+  if (isProcessing) {
+    console.log("⏳ Zaten işlem devam ediyor...");
+    return { success: false, error: "Zaten işlem devam ediyor" };
+  }
+  
+  isProcessing = true;
   console.log("=".repeat(80));
   console.log("🚀 KAYIT BAŞLATILIYOR - EMAIL:", email);
   console.log("=".repeat(80));
   
-  // Her kayıt için yeni cookies instance'ı
-  let globalCookies = await getFreshCookies();
-  
   try {
     // Yeni cookie'leri API'den al
     console.log("\n🔧 1. ADIM: Cookie'ler alınıyor...");
-    if (globalCookies.size === 0) {
+    const cookieSuccess = await getFreshCookies();
+    if (!cookieSuccess) {
       throw new Error("Cookie'ler alınamadı");
     }
     
@@ -424,9 +425,7 @@ async function startRegistration(email) {
     
     // XSRF Token al
     console.log("\n🔧 2. ADIM: XSRF Token alınıyor...");
-    let { xsrfToken, cookies: updatedCookies } = await getXsrfToken(selectedHeaders, globalCookies);
-    globalCookies = updatedCookies;
-    
+    let xsrfToken = await getXsrfToken(selectedHeaders);
     if (!xsrfToken) {
       throw new Error("XSRF Token alınamadı");
     }
@@ -442,11 +441,8 @@ async function startRegistration(email) {
       "https://oauth.hepsiburada.com/api/authenticate/createregisterrequest",
       postBody1,
       xsrfToken,
-      selectedHeaders,
-      globalCookies
+      selectedHeaders
     );
-    
-    globalCookies = result1.cookies;
     
     if (!result1.success || !result1.data.success) {
       throw new Error(`1. POST başarısız: ${result1.data?.message || result1.error}`);
@@ -473,12 +469,10 @@ async function startRegistration(email) {
     
     // Yeni cookie ve token
     console.log("🔄 Yeni cookie'ler alınıyor...");
-    globalCookies = await getFreshCookies();
+    await getFreshCookies();
     
     console.log("🔄 Yeni XSRF token alınıyor...");
-    const xsrfResult = await getXsrfToken(selectedHeaders, globalCookies);
-    xsrfToken = xsrfResult.xsrfToken;
-    globalCookies = xsrfResult.cookies;
+    xsrfToken = await getXsrfToken(selectedHeaders);
     
     const postBody2 = {
       otpReference: result1.data.data.referenceId,
@@ -489,11 +483,8 @@ async function startRegistration(email) {
       "https://oauth.hepsiburada.com/api/account/ValidateTwoFactorEmailOtp",
       postBody2,
       xsrfToken,
-      selectedHeaders,
-      globalCookies
+      selectedHeaders
     );
-    
-    globalCookies = result2.cookies;
     
     if (!result2.success || !result2.data.success || !result2.data.requestId) {
       throw new Error(`2. POST başarısız: ${result2.data?.message || result2.error}`);
@@ -510,12 +501,10 @@ async function startRegistration(email) {
     
     // Yeni cookie ve token
     console.log("🔄 Yeni cookie'ler alınıyor...");
-    globalCookies = await getFreshCookies();
+    await getFreshCookies();
     
     console.log("🔄 Yeni XSRF token alınıyor...");
-    const xsrfResult2 = await getXsrfToken(selectedHeaders, globalCookies);
-    xsrfToken = xsrfResult2.xsrfToken;
-    globalCookies = xsrfResult2.cookies;
+    xsrfToken = await getXsrfToken(selectedHeaders);
     
     const firstName = getRandomTurkishName();
     const lastName = getRandomTurkishName();
@@ -542,8 +531,7 @@ async function startRegistration(email) {
       "https://oauth.hepsiburada.com/api/authenticate/register",
       postBody3,
       xsrfToken,
-      selectedHeaders,
-      globalCookies
+      selectedHeaders
     );
     
     console.log("\n" + "=".repeat(80));
@@ -586,7 +574,8 @@ async function startRegistration(email) {
       stack: error.stack
     };
   } finally {
-    console.log("\n🔄 İşlem tamamlandı");
+    isProcessing = false;
+    console.log("\n🔄 İşlem durumu sıfırlandı");
     console.log("=".repeat(80));
   }
 }

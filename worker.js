@@ -85,6 +85,8 @@ var isProcessing = false;
 
 // Cookie API endpoint
 const COOKIE_API_URL = "https://burnrndr.onrender.com/last-cookies";
+// RENDER API URL - proxy ayarlarını burada yapabilirsin
+const RENDER_API_URL = "https://burnrndr.onrender.com/proxy-register";
 
 // Header sets
 var HEADER_SETS = [

@@ -88,19 +88,43 @@ const COOKIE_API_URL = "https://burnrndr.onrender.com/last-cookies";
 
 // Header sets
 var HEADER_SETS = [
+  // Windows Chrome
   {
-    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.849.0 Safari/537.36",
-    "SecCHUA": '"Chromium";v="138", "Google Chrome";v="138", "Not-A.Brand";v="8"',
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
     "SecCHUAMobile": "?0",
     "SecCHUAPlatform": '"Windows"',
     "Accept": "application/json, text/plain, */*",
     "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
+  },
+  // macOS Safari
+  {
+    "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+    "SecCHUA": '"Not-A.Brand";v="8", "Safari";v="17"',
+    "SecCHUAMobile": "?0", 
+    "SecCHUAPlatform": '"macOS"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.8,en-US;q=0.5,en;q=0.3"
+  },
+  // Android Chrome
+  {
+    "UserAgent": "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?1",
+    "SecCHUAPlatform": '"Android"',
+    "Accept": "application/json, text/plain, */*", 
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7"
   }
 ];
 
-// PowerShell gibi otomatik cookie yönetimi
+// PowerShell gibi otomatik cookie yönetimi - HER İŞLEM BAŞINDA SIFIRLAMA
 async function getFreshCookies() {
   console.log("🍪 Cookie API'den yeni cookie'ler alınıyor...");
+  
+  // HER SEFERİNDE ÖNCE COOKIE'LERİ SIFIRLA - PowerShell gibi
+  globalCookies.clear();
+  console.log("🧹 Önceki cookie'ler temizlendi");
+  
   try {
     const response = await fetch(COOKIE_API_URL);
     if (!response.ok) {
@@ -122,7 +146,6 @@ async function getFreshCookies() {
     console.log(`🎲 Seçilen cookie set: ${randomSetKey}, ${selectedSet.length} cookie`);
     
     // Cookie'leri globalCookies'e ekle (PowerShell gibi temizle ve ekle)
-    globalCookies.clear();
     selectedSet.forEach(cookie => {
       globalCookies.set(cookie.name, cookie.value);
       console.log(`🍪 ${cookie.name}=${cookie.value.substring(0, 20)}...`);
@@ -459,8 +482,8 @@ async function startRegistration(email) {
   console.log("=".repeat(80));
   
   try {
-    // PowerShell gibi: Başlangıçta cookie'leri al
-    console.log("\n🔧 1. ADIM: Cookie'ler alınıyor...");
+    // PowerShell gibi: HER İŞLEM BAŞINDA COOKIE'LERİ SIFIRLA
+    console.log("\n🔧 1. ADIM: Cookie'ler sıfırlanıyor ve yeniden alınıyor...");
     const cookieSuccess = await getFreshCookies();
     if (!cookieSuccess) {
       throw new Error("Cookie'ler alınamadı");
@@ -469,14 +492,13 @@ async function startRegistration(email) {
     const selectedHeaders = getRandomHeaders();
     console.log("✅ Headers hazır, fingerprint:", selectedHeaders.fingerprint);
     
-    // XSRF Token al (PowerShell gibi otomatik cookie güncelleme)
-    console.log("\n🔧 2. ADIM: XSRF Token alınıyor...");
-    let xsrfToken = await getXsrfToken(selectedHeaders);
-    if (!xsrfToken) {
-      throw new Error("XSRF Token alınamadı");
+    // 1. POST: Üyelik İsteği - İLK TOKEN
+    console.log("\n🔧 2. ADIM: 1. POST için XSRF Token alınıyor...");
+    let xsrfToken1 = await getXsrfToken(selectedHeaders);
+    if (!xsrfToken1) {
+      throw new Error("1. XSRF Token alınamadı");
     }
     
-    // 1. POST: Üyelik İsteği
     console.log("\n🔧 3. ADIM: Üyelik isteği gönderiliyor...");
     const postBody1 = {
       email,
@@ -486,7 +508,7 @@ async function startRegistration(email) {
     const result1 = await makePostRequest(
       "https://oauth.hepsiburada.com/api/authenticate/createregisterrequest",
       postBody1,
-      xsrfToken,
+      xsrfToken1,
       selectedHeaders
     );
     
@@ -510,12 +532,12 @@ async function startRegistration(email) {
     
     console.log("✅ OTP KODU HAZIR:", otpCode);
     
-    // 2. POST: OTP Doğrulama - PowerShell gibi otomatik cookie yönetimi
-    console.log("\n🔧 6. ADIM: OTP doğrulama gönderiliyor...");
-    
-    // PowerShell gibi: Yeni XSRF token al (cookie'ler otomatik güncellenir)
-    console.log("🔄 Yeni XSRF token alınıyor...");
-    xsrfToken = await getXsrfToken(selectedHeaders);
+    // 2. POST: OTP Doğrulama - İKİNCİ TOKEN
+    console.log("\n🔧 6. ADIM: 2. POST için YENİ XSRF Token alınıyor...");
+    let xsrfToken2 = await getXsrfToken(selectedHeaders);
+    if (!xsrfToken2) {
+      throw new Error("2. XSRF Token alınamadı");
+    }
     
     const postBody2 = {
       otpReference: result1.data.data.referenceId,
@@ -525,7 +547,7 @@ async function startRegistration(email) {
     const result2 = await makePostRequest(
       "https://oauth.hepsiburada.com/api/account/ValidateTwoFactorEmailOtp",
       postBody2,
-      xsrfToken,
+      xsrfToken2,
       selectedHeaders
     );
     
@@ -539,12 +561,12 @@ async function startRegistration(email) {
     console.log("\n⏳ 7. ADIM: Kayıt öncesi bekleniyor (3 saniye)...");
     await delay(3000);
     
-    // 3. POST: Kayıt Tamamlama - PowerShell gibi otomatik cookie yönetimi
-    console.log("\n🔧 8. ADIM: Kayıt işlemi tamamlanıyor...");
-    
-    // PowerShell gibi: Yeni XSRF token al (cookie'ler otomatik güncellenir)
-    console.log("🔄 Yeni XSRF token alınıyor...");
-    xsrfToken = await getXsrfToken(selectedHeaders);
+    // 3. POST: Kayıt Tamamlama - ÜÇÜNCÜ TOKEN
+    console.log("\n🔧 8. ADIM: 3. POST için YENİ XSRF Token alınıyor...");
+    let xsrfToken3 = await getXsrfToken(selectedHeaders);
+    if (!xsrfToken3) {
+      throw new Error("3. XSRF Token alınamadı");
+    }
     
     const firstName = getRandomTurkishName();
     const lastName = getRandomTurkishName();
@@ -557,20 +579,21 @@ async function startRegistration(email) {
     console.log("   📨 Email:", email);
     console.log("   🆔 RequestId:", result2.data.requestId);
     
+    // 🚨 DÜZELTME: PowerShell'deki gibi body parametreleri
     const postBody3 = {
-      subscribeEmail: false,
+      subscribeEmail: true,      // 🚨 true yapıldı
       firstName,
       lastName,
       password,
-      subscribeSms: false,
-      returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=0fe1789b3dee47458bdf70864a6a9931&code_challenge=1y2GcO5myCuDr8SsID6yMQyi5ZE6I_A9sJhKwYEgnpU&code_challenge_method=S256&response_mode=query",
+      subscribeSms: true,       // 🚨 true yapıldı
+      returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=c7ca3f6c28c5445aa5c1f4d52ce65d6d&code_challenge=t44-iDRkzoBssUdCS9dHN3YZBks8RTWlxV-BpC4Jbos&code_challenge_method=S256&response_mode=query",  // 🚨 PowerShell'deki state kullanıldı
       requestId: result2.data.requestId
     };
     
     const result3 = await makePostRequest(
       "https://oauth.hepsiburada.com/api/authenticate/register",
       postBody3,
-      xsrfToken,
+      xsrfToken3,
       selectedHeaders
     );
     

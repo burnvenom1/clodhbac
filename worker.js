@@ -98,7 +98,7 @@ var HEADER_SETS = [
   }
 ];
 
-// Geliştirilmiş Cookie API'den cookie al
+// PowerShell gibi otomatik cookie yönetimi
 async function getFreshCookies() {
   console.log("🍪 Cookie API'den yeni cookie'ler alınıyor...");
   try {
@@ -121,7 +121,7 @@ async function getFreshCookies() {
     
     console.log(`🎲 Seçilen cookie set: ${randomSetKey}, ${selectedSet.length} cookie`);
     
-    // Cookie'leri globalCookies'e ekle
+    // Cookie'leri globalCookies'e ekle (PowerShell gibi temizle ve ekle)
     globalCookies.clear();
     selectedSet.forEach(cookie => {
       globalCookies.set(cookie.name, cookie.value);
@@ -129,6 +129,10 @@ async function getFreshCookies() {
     });
     
     console.log("✅ Cookie'ler başarıyla yüklendi, toplam:", globalCookies.size);
+    
+    // PowerShell'deki gibi mevcut cookie'leri göster
+    showCurrentCookies();
+    
     return true;
   } catch (error) {
     console.log("❌ Cookie alınamadı:", error.message);
@@ -136,6 +140,27 @@ async function getFreshCookies() {
   }
 }
 __name(getFreshCookies, "getFreshCookies");
+
+// PowerShell'deki gibi mevcut cookie'leri göster
+function showCurrentCookies() {
+  console.log("🔍 MEVCUT COOKIE'LER:");
+  const cookieNames = [];
+  let hbusCount = 0;
+  
+  globalCookies.forEach((value, name) => {
+    cookieNames.push(name);
+    if (name.includes('hbus') || name.includes('HB')) {
+      console.log(`   ✅ ${name}=${value.substring(0, 30)}...`);
+      hbusCount++;
+    } else {
+      console.log(`   🍪 ${name}=${value.substring(0, 30)}...`);
+    }
+  });
+  
+  console.log(`📊 Toplam ${cookieNames.length} cookie, ${hbusCount} HBus cookie`);
+  console.log(`📋 Cookie isimleri: ${cookieNames.join(", ")}`);
+}
+__name(showCurrentCookies, "showCurrentCookies");
 
 function getRandomHeaders() {
   const baseSet = HEADER_SETS[Math.floor(Math.random() * HEADER_SETS.length)];
@@ -165,7 +190,6 @@ function getFormattedEmail() {
 }
 __name(getFormattedEmail, "getFormattedEmail");
 
-// Geliştirilmiş Fingerprint fonksiyonu
 function getFingerprint() {
   const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0;
@@ -205,12 +229,12 @@ function getCookieHeader() {
     cookies.push(`${name}=${value}`);
   });
   const header = cookies.join("; ");
-  console.log("🍪 COOKIE HEADER:", header.substring(0, 100) + "...");
+  console.log("🍪 COOKIE HEADER (Toplam", globalCookies.size, "cookie):", header.substring(0, 100) + "...");
   return header;
 }
 __name(getCookieHeader, "getCookieHeader");
 
-// Geliştirilmiş Cookie güncelleme
+// PowerShell gibi otomatik cookie güncelleme
 function updateCookiesFromResponse(response) {
   const setCookieHeader = response.headers.get("set-cookie");
   if (!setCookieHeader) {
@@ -222,22 +246,38 @@ function updateCookiesFromResponse(response) {
   const cookies = setCookieHeader.split(/,\s*(?=\w+=)/);
   
   let updatedCount = 0;
+  let addedCount = 0;
+  
   cookies.forEach((cookie) => {
     const [nameValue] = cookie.split(";");
     const [name, value] = nameValue.split("=");
     if (name && value) {
-      globalCookies.set(name.trim(), value.trim());
-      console.log(`🔄 Cookie güncellendi: ${name}=${value.substring(0, 30)}...`);
-      updatedCount++;
+      // PowerShell gibi otomatik ekle/güncelle
+      if (globalCookies.has(name)) {
+        globalCookies.set(name.trim(), value.trim());
+        console.log(`🔄 Cookie güncellendi: ${name}=${value.substring(0, 30)}...`);
+        updatedCount++;
+      } else {
+        globalCookies.set(name.trim(), value.trim());
+        console.log(`➕ Yeni cookie eklendi: ${name}=${value.substring(0, 30)}...`);
+        addedCount++;
+      }
     }
   });
   
-  console.log(`✅ ${updatedCount} cookie güncellendi, toplam: ${globalCookies.size}`);
+  console.log(`✅ ${updatedCount} cookie güncellendi, ${addedCount} yeni cookie eklendi, toplam: ${globalCookies.size}`);
+  
+  // Güncellenmiş cookie'leri göster
+  showCurrentCookies();
 }
 __name(updateCookiesFromResponse, "updateCookiesFromResponse");
 
 async function getXsrfToken(selectedHeaders) {
   console.log("🔄 XSRF Token alınıyor...");
+  
+  // PowerShell'deki gibi mevcut cookie'leri göster
+  showCurrentCookies();
+  
   const headers = {
     "accept": selectedHeaders.Accept,
     "accept-language": selectedHeaders.AcceptLanguage,
@@ -253,7 +293,8 @@ async function getXsrfToken(selectedHeaders) {
     "cookie": getCookieHeader()
   };
   
-  console.log("📋 XSRF İstek Headers:", JSON.stringify(headers, null, 2));
+  console.log("📋 XSRF İstek Headers:");
+  console.log(JSON.stringify(headers, null, 2));
   
   try {
     const response = await fetch("https://oauth.hepsiburada.com/api/authenticate/xsrf-token", {
@@ -263,6 +304,7 @@ async function getXsrfToken(selectedHeaders) {
     console.log("📡 XSRF Response Status:", response.status);
     console.log("📋 XSRF Response Headers:", Object.fromEntries(response.headers));
     
+    // PowerShell gibi otomatik cookie güncelleme
     updateCookiesFromResponse(response);
     
     const cookies = response.headers.get("set-cookie");
@@ -327,9 +369,12 @@ async function getOtpCode(email) {
 }
 __name(getOtpCode, "getOtpCode");
 
-// Geliştirilmiş POST fonksiyonu
+// PowerShell gibi geliştirilmiş POST fonksiyonu
 async function makePostRequest(url, body, xsrfToken, selectedHeaders) {
   console.log("🎯 POST isteği gönderiliyor:", url);
+  
+  // PowerShell'deki gibi mevcut cookie'leri göster
+  showCurrentCookies();
   
   const currentFingerprint = selectedHeaders.fingerprint || getFingerprint();
   
@@ -372,6 +417,7 @@ async function makePostRequest(url, body, xsrfToken, selectedHeaders) {
     console.log("📡 POST Response Status:", response.status);
     console.log("📋 POST Response Headers:", Object.fromEntries(response.headers));
     
+    // PowerShell gibi otomatik cookie güncelleme
     updateCookiesFromResponse(response);
     
     const responseText = await response.text();
@@ -400,7 +446,7 @@ async function makePostRequest(url, body, xsrfToken, selectedHeaders) {
 }
 __name(makePostRequest, "makePostRequest");
 
-// Ana kayıt fonksiyonu
+// Ana kayıt fonksiyonu - PowerShell gibi otomatik cookie yönetimi
 async function startRegistration(email) {
   if (isProcessing) {
     console.log("⏳ Zaten işlem devam ediyor...");
@@ -413,7 +459,7 @@ async function startRegistration(email) {
   console.log("=".repeat(80));
   
   try {
-    // Yeni cookie'leri API'den al
+    // PowerShell gibi: Başlangıçta cookie'leri al
     console.log("\n🔧 1. ADIM: Cookie'ler alınıyor...");
     const cookieSuccess = await getFreshCookies();
     if (!cookieSuccess) {
@@ -423,7 +469,7 @@ async function startRegistration(email) {
     const selectedHeaders = getRandomHeaders();
     console.log("✅ Headers hazır, fingerprint:", selectedHeaders.fingerprint);
     
-    // XSRF Token al
+    // XSRF Token al (PowerShell gibi otomatik cookie güncelleme)
     console.log("\n🔧 2. ADIM: XSRF Token alınıyor...");
     let xsrfToken = await getXsrfToken(selectedHeaders);
     if (!xsrfToken) {
@@ -464,13 +510,10 @@ async function startRegistration(email) {
     
     console.log("✅ OTP KODU HAZIR:", otpCode);
     
-    // 2. POST: OTP Doğrulama
+    // 2. POST: OTP Doğrulama - PowerShell gibi otomatik cookie yönetimi
     console.log("\n🔧 6. ADIM: OTP doğrulama gönderiliyor...");
     
-    // Yeni cookie ve token
-    console.log("🔄 Yeni cookie'ler alınıyor...");
-    await getFreshCookies();
-    
+    // PowerShell gibi: Yeni XSRF token al (cookie'ler otomatik güncellenir)
     console.log("🔄 Yeni XSRF token alınıyor...");
     xsrfToken = await getXsrfToken(selectedHeaders);
     
@@ -496,13 +539,10 @@ async function startRegistration(email) {
     console.log("\n⏳ 7. ADIM: Kayıt öncesi bekleniyor (3 saniye)...");
     await delay(3000);
     
-    // 3. POST: Kayıt Tamamlama
+    // 3. POST: Kayıt Tamamlama - PowerShell gibi otomatik cookie yönetimi
     console.log("\n🔧 8. ADIM: Kayıt işlemi tamamlanıyor...");
     
-    // Yeni cookie ve token
-    console.log("🔄 Yeni cookie'ler alınıyor...");
-    await getFreshCookies();
-    
+    // PowerShell gibi: Yeni XSRF token al (cookie'ler otomatik güncellenir)
     console.log("🔄 Yeni XSRF token alınıyor...");
     xsrfToken = await getXsrfToken(selectedHeaders);
     

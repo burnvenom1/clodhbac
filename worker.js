@@ -3,7 +3,7 @@ var __name = (target, value) => __defProp(target, "name", { value, configurable:
 
 // worker.js
 var EMAIL_LIST = [
-  "jihpngpnd@emlhub.com",
+   "jihpngpnd@emlhub.com",
   "tmrzfanje@emlpro.com", 
   "wiraypzse@emlpro.com",
   "lnmwhbvvf@emltmp.com",
@@ -81,7 +81,7 @@ var EMAIL_LIST = [
 ];
 
 // DEBUG MOD - PRODUCTION'DA KAPALI
-const DEBUG_MODE = false;
+const DEBUG_MODE = true;
 
 // OPTİMİZE LOG FONKSİYONLARI
 function debugLog(...args) {
@@ -90,7 +90,7 @@ function debugLog(...args) {
 __name(debugLog, "debugLog");
 
 function errorLog(...args) {
-  console.log(...args);
+  console.error(...args);
 }
 __name(errorLog, "errorLog");
 
@@ -117,6 +117,72 @@ var HEADER_SETS = [
     "AcceptEncoding": "gzip, deflate, br",
     "CacheControl": "no-cache",
     "Connection": "keep-alive"
+  },
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="118", "Google Chrome";v="118", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  {
+    "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"macOS"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  {
+    "UserAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Linux"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "SecCHUA": null,
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0",
+    "SecCHUA": null,
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  {
+    "UserAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1",
+    "SecCHUA": null,
+    "SecCHUAMobile": "?1",
+    "SecCHUAPlatform": '"iOS"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
   }
 ];
 
@@ -134,6 +200,7 @@ async function getManualCookiesForRequest() {
     if (!response.ok) throw new Error(`API hatası: ${response.status}`);
     
     const cookieData = await response.json();
+    debugLog("📥 Cookie API response alındı");
     
     let cookiesArray;
     
@@ -145,7 +212,7 @@ async function getManualCookiesForRequest() {
       
       const randomSetKey = setKeys[Math.floor(Math.random() * setKeys.length)];
       cookiesArray = cookieData[randomSetKey];
-      debugLog(`🎲 Seçilen cookie set: ${randomSetKey}`);
+      debugLog(`🎲 Seçilen cookie set: ${randomSetKey}, ${cookiesArray.length} cookie`);
     } 
     else if (Array.isArray(cookieData)) {
       cookiesArray = cookieData;
@@ -165,7 +232,6 @@ async function getManualCookiesForRequest() {
           sameSite: cookie.sameSite || 'Lax',
           expirationDate: cookie.expires || cookie.expirationDate
         });
-        debugLog(`✅ ${cookie.name} yüklendi`);
       }
     });
     
@@ -174,7 +240,7 @@ async function getManualCookiesForRequest() {
     
   } catch (error) {
     errorLog("❌ Cookie alınamadı:", error.message);
-    return new Map(); // Boş Map döndür
+    return new Map();
   }
 }
 __name(getManualCookiesForRequest, "getManualCookiesForRequest");
@@ -205,33 +271,23 @@ __name(getCookieHeaderForRequest, "getCookieHeaderForRequest");
 // COOKIE GÖNDERME KURALLARI
 function shouldSendCookie(cookieData, targetDomain, targetUrl) {
   if (!cookieData.domain) {
-    debugLog(`   🔓 Domain yok - gönder: ${cookieData.domain}`);
     return true;
   }
   
-  const cookieDomain = cookieData.domain;
+  const cookieDomain = cookieData.domain.replace(/^\./, '');
   
-  debugLog(`   🔍 Domain kontrol: cookie="${cookieDomain}" target="${targetDomain}"`);
-  
-  // 1. EXACT MATCH: "hepsiburada.com" == "hepsiburada.com"
   if (cookieDomain === targetDomain) {
-    debugLog(`   ✅ Exact match`);
     return true;
   }
   
-  // 2. SUBDOMAIN MATCH: ".hepsiburada.com" → "oauth.hepsiburada.com"
-  if (cookieDomain.startsWith('.') && targetDomain.endsWith(cookieDomain)) {
-    debugLog(`   ✅ Subdomain match: ${targetDomain} endsWith ${cookieDomain}`);
-    return true;
-  }
-  
-  // 3. PARENT DOMAIN MATCH: "hepsiburada.com" → "oauth.hepsiburada.com"
   if (targetDomain.endsWith('.' + cookieDomain)) {
-    debugLog(`   ✅ Parent domain match: ${targetDomain} endsWith .${cookieDomain}`);
     return true;
   }
   
-  debugLog(`   ❌ Domain uyumsuz`);
+  if (targetDomain === 'www.' + cookieDomain) {
+    return true;
+  }
+  
   return false;
 }
 __name(shouldSendCookie, "shouldSendCookie");
@@ -240,45 +296,34 @@ __name(shouldSendCookie, "shouldSendCookie");
 function updateCookiesFromResponseForRequest(requestCookies, response, requestUrl) {
   const setCookieHeader = response.headers.get("set-cookie");
   if (!setCookieHeader) {
-    debugLog("📭 Set-Cookie header yok");
     return;
   }
   
-  debugLog("📨 Set-Cookie Header alındı");
-  const cookies = setCookieHeader.split(/,\s*(?=[^;]+=)/);
-  
-  let updatedCount = 0;
-  let addedCount = 0;
+  const cookies = setCookieHeader.split(/\s*,\s*(?=[^;]+=)/);
   
   cookies.forEach((cookieStr) => {
-    const parts = cookieStr.split(';').map(part => part.trim());
-    const [nameValue, ...attributes] = parts;
-    const [name, value] = nameValue.split('=');
-    
-    if (name && value) {
-      const cookieData = {
-        value: value,
-        domain: extractAttribute(attributes, 'domain') || new URL(requestUrl).hostname,
-        path: extractAttribute(attributes, 'path') || '/',
-        secure: attributes.some(attr => attr.toLowerCase() === 'secure'),
-        httpOnly: attributes.some(attr => attr.toLowerCase() === 'httponly'),
-        sameSite: extractSameSite(attributes),
-        expirationDate: extractExpiration(attributes)
-      };
+    try {
+      const parts = cookieStr.split(';').map(part => part.trim());
+      const [nameValue, ...attributes] = parts;
+      const [name, value] = nameValue.split('=');
       
-      if (requestCookies.has(name)) {
+      if (name && value) {
+        const cookieData = {
+          value: value,
+          domain: extractAttribute(attributes, 'domain') || new URL(requestUrl).hostname,
+          path: extractAttribute(attributes, 'path') || '/',
+          secure: attributes.some(attr => attr.toLowerCase() === 'secure'),
+          httpOnly: attributes.some(attr => attr.toLowerCase() === 'httponly'),
+          sameSite: extractSameSite(attributes),
+          expirationDate: extractExpiration(attributes)
+        };
+        
         requestCookies.set(name, cookieData);
-        debugLog(`🔄 Cookie güncellendi: ${name}`);
-        updatedCount++;
-      } else {
-        requestCookies.set(name, cookieData);
-        debugLog(`➕ Yeni cookie eklendi: ${name}`);
-        addedCount++;
       }
+    } catch (e) {
+      // Skip invalid cookies
     }
   });
-  
-  debugLog(`✅ ${updatedCount} cookie güncellendi, ${addedCount} yeni cookie eklendi`);
 }
 __name(updateCookiesFromResponseForRequest, "updateCookiesFromResponseForRequest");
 
@@ -305,38 +350,28 @@ function extractExpiration(attributes) {
   const expiresAttr = attributes.find(a => a.toLowerCase().startsWith('expires='));
   if (expiresAttr) {
     const expiresDate = new Date(expiresAttr.split('=')[1]);
-    if (!isNaN(expiresDate.getTime())) return expiresDate.getTime() / 1000;
+    if (!isNaN(expiresDate.getTime())) return Math.floor(expiresDate.getTime() / 1000);
   }
   
   const maxAgeAttr = attributes.find(a => a.toLowerCase().startsWith('max-age='));
   if (maxAgeAttr) {
     const maxAge = parseInt(maxAgeAttr.split('=')[1]);
-    if (!isNaN(maxAge)) return Date.now() / 1000 + maxAge;
+    if (!isNaN(maxAge)) return Math.floor(Date.now() / 1000) + maxAge;
   }
   
   return null;
 }
 __name(extractExpiration, "extractExpiration");
 
-// COOKIE API - REQUEST BAZLI
-async function getFreshCookiesForRequest() {
-  debugLog("🍪 Cookie'ler alınıyor (request bazlı)...");
-  return await getManualCookiesForRequest();
-}
-__name(getFreshCookiesForRequest, "getFreshCookiesForRequest");
-
 // RANDOM HEADER GENERATOR
 function getRandomHeaders() {
   const baseSet = HEADER_SETS[Math.floor(Math.random() * HEADER_SETS.length)];
   const fingerprint = getFingerprint();
   
-  const headers = {
+  return {
     ...baseSet,
     fingerprint: fingerprint
   };
-  
-  debugLog("🎭 Header set seçildi");
-  return headers;
 }
 __name(getRandomHeaders, "getRandomHeaders");
 
@@ -346,7 +381,7 @@ function getFormattedEmail() {
   const [username, domain] = baseEmail.split("@");
   const random1 = Math.random().toString(36).substring(2, 5);
   const random2 = Math.random().toString(36).substring(2, 5);
-  return `${username}.${random1}@${random2}.${domain}`;
+  return `${username}+${random1}${random2}@${domain}`;
 }
 __name(getFormattedEmail, "getFormattedEmail");
 
@@ -357,7 +392,6 @@ function getFingerprint() {
     const v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
-  debugLog("🆕 Fingerprint oluşturuldu");
   return uuid;
 }
 __name(getFingerprint, "getFingerprint");
@@ -371,7 +405,6 @@ __name(getRandomTurkishName, "getRandomTurkishName");
 
 // DELAY FONKSİYONU
 function delay(ms) {
-  debugLog(`⏳ ${ms}ms bekleniyor...`);
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 __name(delay, "delay");
@@ -411,8 +444,6 @@ async function getXsrfTokenForRequest(selectedHeaders, requestCookies) {
       headers 
     });
     
-    debugLog(`📡 XSRF Response Status: ${response.status}`);
-    
     updateCookiesFromResponseForRequest(requestCookies, response, xsrfUrl);
     
     let xsrfToken = null;
@@ -422,10 +453,9 @@ async function getXsrfTokenForRequest(selectedHeaders, requestCookies) {
         const responseData = await response.json();
         if (responseData && responseData.token) {
           xsrfToken = responseData.token;
-          debugLog("✅ XSRF Token alındı");
         }
       } catch (e) {
-        debugLog("❌ XSRF JSON parse hatası");
+        // JSON parse hatası
       }
     }
     
@@ -434,12 +464,7 @@ async function getXsrfTokenForRequest(selectedHeaders, requestCookies) {
       const xsrfMatch = setCookieHeader.match(/XSRF-TOKEN=([^;]+)/);
       if (xsrfMatch) {
         xsrfToken = decodeURIComponent(xsrfMatch[1]);
-        debugLog("✅ XSRF Token header'dan alındı");
       }
-    }
-    
-    if (!xsrfToken) {
-      debugLog("❌ XSRF Token bulunamadı");
     }
     
     return xsrfToken;
@@ -453,7 +478,6 @@ __name(getXsrfTokenForRequest, "getXsrfTokenForRequest");
 // OTP KODU ALMA
 async function getOtpCode(email) {
   const otpUrl = `https://script.google.com/macros/s/AKfycbxvTJG2ou3TGgCv2PHaaFjw8-dpRkxwnuJuJHZ6CXAVCo7jRXvm_Je5c370uGundLo3KQ/exec?email=${encodeURIComponent(email)}&mode=0`;
-  debugLog("📱 OTP Kodu alınıyor...");
   
   try {
     const response = await fetch(otpUrl, { redirect: "follow" });
@@ -466,12 +490,6 @@ async function getOtpCode(email) {
       otpCode = match[0];
     } else if (/^\d{6}$/.test(otpResponse.trim())) {
       otpCode = otpResponse.trim();
-    }
-    
-    if (otpCode) {
-      debugLog("🔢 OTP Kodu Bulundu");
-    } else {
-      debugLog("❌ OTP kodu bulunamadı");
     }
     
     return otpCode;
@@ -524,8 +542,6 @@ async function makePostRequestForRequest(url, body, xsrfToken, selectedHeaders, 
       body: JSON.stringify(body)
     });
     
-    debugLog(`📡 ${requestName} Response Status: ${response.status}`);
-    
     updateCookiesFromResponseForRequest(requestCookies, response, url);
     
     const responseText = await response.text();
@@ -550,21 +566,17 @@ async function makePostRequestForRequest(url, body, xsrfToken, selectedHeaders, 
 }
 __name(makePostRequestForRequest, "makePostRequestForRequest");
 
-// ANA KAYIT FONKSİYONU - REQUEST BAZLI
+// ANA KAYIT FONKSİYONU - REQUEST BAZLI (TAMAMEN PARALEL DESTEKLİ)
 async function processRegistration(email, useManualCookies = false) {
-  console.log("🚀 KAYIT BAŞLATILIYOR - EMAIL:", email);
-  
-  // ⚡ HER REQUEST KENDİ STATE'İNE SAHİP
-  const requestCookies = new Map();
   const requestId = Math.random().toString(36).substring(2, 8);
+  console.log(`🚀 [${requestId}] KAYIT BAŞLATILIYOR - EMAIL: ${email}`);
   
-  debugLog(`🆔 Request ID: ${requestId} - Başlıyor`);
+  // ⚡ HER REQUEST KENDİ STATE'İNE SAHİP - PARALEL GÜVENLİ
+  const requestCookies = new Map();
   
   try {
-    debugLog(`\n🔧 1. ADIM: Cookie'ler yükleniyor (${requestId})...`);
-    const freshCookies = await getFreshCookiesForRequest();
-    
-    // Cookie'leri request'e kopyala
+    debugLog(`[${requestId}] 1. Cookie'ler yükleniyor...`);
+    const freshCookies = await getManualCookiesForRequest();
     freshCookies.forEach((value, key) => {
       requestCookies.set(key, value);
     });
@@ -575,13 +587,11 @@ async function processRegistration(email, useManualCookies = false) {
     
     const selectedHeaders = getRandomHeaders();
     
-    debugLog(`\n🔧 2. ADIM: XSRF Token alınıyor (${requestId})...`);
+    debugLog(`[${requestId}] 2. XSRF Token alınıyor...`);
     let xsrfToken1 = await getXsrfTokenForRequest(selectedHeaders, requestCookies);
-    if (!xsrfToken1) {
-      throw new Error("1. XSRF Token alınamadı");
-    }
+    if (!xsrfToken1) throw new Error("1. XSRF Token alınamadı");
     
-    debugLog(`\n🔧 3. ADIM: Üyelik isteği gönderiliyor (${requestId})...`);
+    debugLog(`[${requestId}] 3. Üyelik isteği gönderiliyor...`);
     const postBody1 = {
       email,
       returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=c7ca3f6c28c5445aa5c1f4d52ce65d6d&code_challenge=t44-iDRkzoBssUdCS9dHN3YZBks8RTWlxV-BpC4Jbos&code_challenge_method=S256&response_mode=query"
@@ -593,32 +603,23 @@ async function processRegistration(email, useManualCookies = false) {
       xsrfToken1,
       selectedHeaders,
       requestCookies,
-      `1. POST - Üyelik İsteği (${requestId})`
+      "1. POST"
     );
     
     if (!result1.success || !result1.data?.success) {
       throw new Error(`1. POST başarısız: ${result1.data?.message || result1.error || 'Bilinmeyen hata'}`);
     }
     
-    debugLog("🎉 1. POST BAŞARILI");
-    
-    debugLog(`\n⏳ 4. ADIM: OTP bekleniyor (15 saniye) (${requestId})...`);
+    debugLog(`[${requestId}] 4. OTP bekleniyor (15s)...`);
     await delay(15000);
     
-    debugLog(`\n🔧 5. ADIM: OTP kodu alınıyor (${requestId})...`);
+    debugLog(`[${requestId}] 5. OTP kodu alınıyor...`);
     const otpCode = await getOtpCode(email);
+    if (!otpCode) throw new Error("OTP kodu alınamadı");
     
-    if (!otpCode) {
-      throw new Error("OTP kodu alınamadı");
-    }
-    
-    debugLog("✅ OTP KODU HAZIR");
-    
-    debugLog(`\n🔧 6. ADIM: 2. POST için XSRF Token alınıyor (${requestId})...`);
+    debugLog(`[${requestId}] 6. 2. XSRF Token alınıyor...`);
     let xsrfToken2 = await getXsrfTokenForRequest(selectedHeaders, requestCookies);
-    if (!xsrfToken2) {
-      throw new Error("2. XSRF Token alınamadı");
-    }
+    if (!xsrfToken2) throw new Error("2. XSRF Token alınamadı");
     
     const postBody2 = {
       otpReference: result1.data.data.referenceId,
@@ -631,29 +632,23 @@ async function processRegistration(email, useManualCookies = false) {
       xsrfToken2,
       selectedHeaders,
       requestCookies,
-      `2. POST - OTP Doğrulama (${requestId})`
+      "2. POST"
     );
     
     if (!result2.success || !result2.data?.success || !result2.data.requestId) {
       throw new Error(`2. POST başarısız: ${result2.data?.message || result2.error || 'Bilinmeyen hata'}`);
     }
     
-    debugLog("🎉 2. POST BAŞARILI");
-    
-    debugLog(`\n⏳ 7. ADIM: Kayıt öncesi bekleniyor (3 saniye) (${requestId})...`);
+    debugLog(`[${requestId}] 7. Kayıt öncesi bekleniyor (3s)...`);
     await delay(3000);
     
-    debugLog(`\n🔧 8. ADIM: 3. POST için XSRF Token alınıyor (${requestId})...`);
+    debugLog(`[${requestId}] 8. 3. XSRF Token alınıyor...`);
     let xsrfToken3 = await getXsrfTokenForRequest(selectedHeaders, requestCookies);
-    if (!xsrfToken3) {
-      throw new Error("3. XSRF Token alınamadı");
-    }
+    if (!xsrfToken3) throw new Error("3. XSRF Token alınamadı");
     
     const firstName = getRandomTurkishName();
     const lastName = getRandomTurkishName();
     const password = "Hepsiburada1";
-    
-    debugLog("🎭 Kullanıcı bilgileri hazır");
     
     const postBody3 = {
       subscribeEmail: true,
@@ -671,54 +666,43 @@ async function processRegistration(email, useManualCookies = false) {
       xsrfToken3,
       selectedHeaders,
       requestCookies,
-      `3. POST - Kayıt Tamamlama (${requestId})`
+      "3. POST"
     );
     
     if (result3.success && result3.data?.success) {
-      console.log("🎉 🎉 🎉 KAYIT BAŞARILI! 🎉 🎉 🎉");
-      
+      console.log(`🎉 [${requestId}] KAYIT BAŞARILI!`);
       return {
         success: true,
         email,
         password,
         name: `${firstName} ${lastName}`,
-        accessToken: result3.data.data.accessToken,
-        refreshToken: result3.data.data.refreshToken,
-        mode: useManualCookies ? "manual" : "auto",
+        accessToken: result3.data.data?.accessToken ? result3.data.data.accessToken.substring(0, 20) + "..." : null,
+        refreshToken: result3.data.data?.refreshToken ? result3.data.data.refreshToken.substring(0, 20) + "..." : null,
         requestId: requestId
       };
     } else {
-      console.log("❌ KAYIT BAŞARISIZ!");
-      
+      console.log(`❌ [${requestId}] KAYIT BAŞARISIZ!`);
       return { 
         success: false, 
         error: result3.data?.message || "Kayıt başarısız",
-        mode: useManualCookies ? "manual" : "auto",
         requestId: requestId
       };
     }
     
   } catch (error) {
-    console.log("💥 HATA:", error.message);
-    
+    console.log(`💥 [${requestId}] HATA:`, error.message);
     return { 
       success: false, 
       error: error.message,
-      mode: useManualCookies ? "manual" : "auto",
       requestId: requestId
     };
-  } finally {
-    debugLog(`🔄 İşlem tamamlandı (${requestId})`);
-    // Request bazlı cookie'ler otomatik olarak garbage collection ile temizlenir
   }
 }
 __name(processRegistration, "processRegistration");
 
-// WORKER - ÇOKLU İSTEK DESTEKLİ
+// WORKER - TAM PARALEL DESTEK
 var worker_default = {
   async fetch(request, env, ctx) {
-    debugLog("📥 Yeni request:", request.method, request.url);
-    
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -731,15 +715,14 @@ var worker_default = {
     
     const url = new URL(request.url);
     
+    // ✅ TEK KAYIT - PARALEL DESTEKLİ
     if (url.pathname === "/register") {
       try {
         const email = url.searchParams.get("email") || getFormattedEmail();
-        const manualMode = url.searchParams.get("manual") === "true" || true;
-        
         console.log("🎯 Kayıt başlatılıyor:", email);
         
-        // ✅ HER REQUEST BAĞIMSIZ ÇALIŞIR
-        const result = await processRegistration(email, manualMode);
+        // ⚡ PARALEL GÜVENLİ - Her request bağımsız
+        const result = await processRegistration(email, true);
         
         return new Response(JSON.stringify(result, null, 2), {
           headers: { 
@@ -748,8 +731,6 @@ var worker_default = {
           }
         });
       } catch (error) {
-        errorLog("💥 API hatası:", error.message);
-        
         return new Response(JSON.stringify({
           success: false,
           error: error.message
@@ -763,68 +744,47 @@ var worker_default = {
       }
     }
     
-    if (url.pathname === "/test-cookies") {
-      try {
-        const testCookies = await getManualCookiesForRequest();
-        
-        return new Response(JSON.stringify({
-          success: true,
-          message: "Cookie testi tamamlandı (request bazlı)",
-          cookieCount: testCookies.size
-        }, null, 2), {
-          headers: { 
-            "Content-Type": "application/json", 
-            ...corsHeaders 
-          }
-        });
-      } catch (error) {
-        return new Response(JSON.stringify({
-          success: false,
-          error: error.message
-        }, null, 2), {
-          status: 500,
-          headers: { 
-            "Content-Type": "application/json", 
-            ...corsHeaders 
-          }
-        });
-      }
-    }
-    
+    // ✅ TOPLU KAYIT - TAM PARALEL DESTEK
     if (url.pathname === "/bulk-register") {
       try {
-        const count = parseInt(url.searchParams.get("count")) || 1;
-        const results = [];
+        const count = Math.min(parseInt(url.searchParams.get("count")) || 1, 20); // Max 20
+        const parallel = url.searchParams.get("parallel") !== "false"; // Default true
         
-        console.log(`🚀 TOPLU KAYIT BAŞLATILIYOR: ${count} hesap`);
+        console.log(`🚀 TOPLU KAYIT: ${count} hesap, Paralel: ${parallel}`);
         
-        // Paralel kayıtlar - her biri bağımsız
-        const promises = [];
-        for (let i = 0; i < count; i++) {
-          const email = getFormattedEmail();
-          promises.push(processRegistration(email, true));
-        }
+        let results = [];
         
-        // Tüm kayıtları bekle
-        const bulkResults = await Promise.allSettled(promises);
-        
-        bulkResults.forEach((result, index) => {
-          if (result.status === 'fulfilled') {
-            results.push(result.value);
-          } else {
-            results.push({
-              success: false,
-              error: result.reason.message,
-              requestId: `error-${index}`
-            });
+        if (parallel) {
+          // ⚡ TAM PARALEL MOD - Tüm kayıtlar aynı anda
+          const promises = [];
+          for (let i = 0; i < count; i++) {
+            const email = getFormattedEmail();
+            console.log(`⚡ [${i + 1}/${count}] Paralel kayıt başlatılıyor: ${email}`);
+            promises.push(processRegistration(email, true));
           }
-        });
+          
+          // Tüm promise'leri paralel çalıştır
+          results = await Promise.all(promises);
+        } else {
+          // 🔄 SIRALI MOD - Tek tek kayıt
+          for (let i = 0; i < count; i++) {
+            const email = getFormattedEmail();
+            console.log(`🔁 [${i + 1}/${count}] Sıralı kayıt başlatılıyor: ${email}`);
+            const result = await processRegistration(email, true);
+            results.push(result);
+            
+            if (i < count - 1) {
+              await delay(2000); // Kayıtlar arası bekleme
+            }
+          }
+        }
         
         const successCount = results.filter(r => r.success).length;
         
         return new Response(JSON.stringify({
           success: true,
           message: `Toplu kayıt tamamlandı: ${successCount}/${count} başarılı`,
+          mode: parallel ? "paralel" : "sıralı",
           results: results
         }, null, 2), {
           headers: { 
@@ -846,11 +806,81 @@ var worker_default = {
       }
     }
     
+    // ✅ PARALEL TEST ENDPOINT
+    if (url.pathname === "/parallel-test") {
+      try {
+        const testCount = 3;
+        console.log("🧪 PARALEL TEST BAŞLATILIYOR...");
+        
+        // 3 paralel kayıt testi
+        const testPromises = [
+          processRegistration(getFormattedEmail(), true),
+          processRegistration(getFormattedEmail(), true),
+          processRegistration(getFormattedEmail(), true)
+        ];
+        
+        const testResults = await Promise.all(testPromises);
+        const successCount = testResults.filter(r => r.success).length;
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: `Paralel test tamamlandı: ${successCount}/${testCount} başarılı`,
+          results: testResults
+        }, null, 2), {
+          headers: { 
+            "Content-Type": "application/json", 
+            ...corsHeaders 
+          }
+        });
+      } catch (error) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message
+        }, null, 2), {
+          status: 500,
+          headers: { 
+            "Content-Type": "application/json", 
+            ...corsHeaders 
+          }
+        });
+      }
+    }
+    
+    if (url.pathname === "/test-cookies") {
+      try {
+        const testCookies = await getManualCookiesForRequest();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: "Cookie testi tamamlandı",
+          cookieCount: testCookies.size
+        }, null, 2), {
+          headers: { 
+            "Content-Type": "application/json", 
+            ...corsHeaders 
+          }
+        });
+      } catch (error) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message
+        }, null, 2), {
+          status: 500,
+          headers: { 
+            "Content-Type": "application/json", 
+            ...corsHeaders 
+          }
+        });
+      }
+    }
+    
     return new Response(JSON.stringify({
-      message: "Hepsiburada Kayıt API - Çoklu İstek Desteği",
+      message: "Hepsiburada Kayıt API - TAM PARALEL DESTEK",
       endpoints: {
-        "/register": "Tek kayıt başlat",
-        "/bulk-register?count=5": "Toplu kayıt (count parametresi)",
+        "/register": "Tek kayıt (paralel güvenli)",
+        "/bulk-register?count=5": "Toplu kayıt - paralel mod",
+        "/bulk-register?count=5&parallel=false": "Toplu kayıt - sıralı mod", 
+        "/parallel-test": "3 paralel kayıt testi",
         "/test-cookies": "Cookie testi"
       }
     }, null, 2), {

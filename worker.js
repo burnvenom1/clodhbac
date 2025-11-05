@@ -111,6 +111,90 @@ var HEADER_SETS = [
   }
 ];
 
+// AKILLI COOKIE PARSING - TÜM COOKIE'LER İÇİN
+function parseCookieString(cookieStr, defaultDomain) {
+  console.log("🔧 COOKIE PARSING:", cookieStr);
+  
+  try {
+    const parts = cookieStr.split(';').map(part => part.trim());
+    const [nameValue, ...attributes] = parts;
+    const [name, value] = nameValue.split('=');
+    
+    if (!name || !value) {
+      console.log("❌ Geçersiz cookie formatı");
+      return null;
+    }
+    
+    // DEFAULT DEĞERLER - AKILLI
+    const cookieData = {
+      value: value,
+      domain: defaultDomain,
+      path: '/',
+      secure: false,
+      httpOnly: false,
+      sameSite: 'Lax',
+      expirationDate: null
+    };
+    
+    // ATTRIBUTE'LERİ PARSE ET
+    attributes.forEach(attr => {
+      const lowerAttr = attr.toLowerCase();
+      
+      if (lowerAttr.startsWith('domain=')) {
+        cookieData.domain = attr.split('=')[1];
+      } else if (lowerAttr.startsWith('path=')) {
+        cookieData.path = attr.split('=')[1];
+      } else if (lowerAttr.startsWith('expires=')) {
+        const expiresValue = attr.split('=')[1];
+        const expiresDate = new Date(expiresValue);
+        if (!isNaN(expiresDate.getTime())) {
+          cookieData.expirationDate = expiresDate.getTime() / 1000;
+        }
+      } else if (lowerAttr.startsWith('max-age=')) {
+        const maxAge = parseInt(attr.split('=')[1]);
+        if (!isNaN(maxAge)) {
+          cookieData.expirationDate = Date.now() / 1000 + maxAge;
+        }
+      } else if (lowerAttr === 'secure') {
+        cookieData.secure = true;
+      } else if (lowerAttr === 'httponly') {
+        cookieData.httpOnly = true;
+      } else if (lowerAttr.startsWith('samesite=')) {
+        cookieData.sameSite = attr.split('=')[1];
+      }
+    });
+    
+    // DOMAIN OTOMATİK DÜZELTME
+    if (!cookieData.domain || cookieData.domain === defaultDomain) {
+      if (defaultDomain.includes('hepsiburada.com')) {
+        cookieData.domain = '.hepsiburada.com';
+      }
+    }
+    
+    // SECURE FLAG OTOMATİK DÜZELTME
+    if (defaultDomain.includes('hepsiburada.com')) {
+      cookieData.secure = true;
+    }
+    
+    console.log("✅ PARSED COOKIE:", {
+      name: name,
+      value: value.substring(0, 20) + '...',
+      domain: cookieData.domain,
+      path: cookieData.path,
+      secure: cookieData.secure,
+      httpOnly: cookieData.httpOnly,
+      sameSite: cookieData.sameSite,
+      expires: cookieData.expirationDate ? new Date(cookieData.expirationDate * 1000).toISOString() : 'Session'
+    });
+    
+    return { name, data: cookieData };
+  } catch (error) {
+    console.log("❌ Cookie parsing hatası:", error.message);
+    return null;
+  }
+}
+__name(parseCookieString, "parseCookieString");
+
 // API COOKIE'LERİ MANUEL GİBİ İŞLEME
 async function getManualCookies() {
   console.log("👤 API COOKIE MODU AKTİF");
@@ -147,14 +231,18 @@ async function getManualCookies() {
     
     cookiesArray.forEach(cookie => {
       if (cookie.name && cookie.value) {
-        globalCookies.set(cookie.name, {
+        // API COOKIE'LERİNİ DOĞRU FORMATLA
+        const cookieData = {
           value: cookie.value,
-          domain: cookie.domain,
+          domain: cookie.domain || '.hepsiburada.com',
           path: cookie.path || '/',
-          secure: cookie.secure || false,
+          secure: cookie.secure || true,
           httpOnly: cookie.httpOnly || false,
+          sameSite: cookie.sameSite || 'Lax',
           expirationDate: cookie.expires || cookie.expirationDate
-        });
+        };
+        
+        globalCookies.set(cookie.name, cookieData);
         console.log(`✅ ${cookie.name} = ${cookie.value.substring(0, 30)}...`);
       }
     });
@@ -170,7 +258,7 @@ async function getManualCookies() {
 }
 __name(getManualCookies, "getManualCookies");
 
-// COOKIE HEADER OLUŞTURMA - DETAYLI LOG
+// COOKIE HEADER OLUŞTURMA - AKILLI
 function getCookieHeaderForDomain(targetUrl) {
   try {
     const urlObj = new URL(targetUrl);
@@ -199,18 +287,25 @@ function getCookieHeaderForDomain(targetUrl) {
 }
 __name(getCookieHeaderForDomain, "getCookieHeaderForDomain");
 
-// COOKIE GÖNDERME KURALLARI
+// COOKIE GÖNDERME KURALLARI - GELİŞMİŞ
 function shouldSendCookie(cookieData, targetDomain, targetUrl) {
   if (!cookieData.domain) return true;
   
   const cookieDomain = cookieData.domain.replace(/^\./, '');
   const cleanTargetDomain = targetDomain.replace(/^\./, '');
   
+  // AYNI DOMAIN
   if (cookieDomain === cleanTargetDomain) {
     return true;
   }
   
+  // SUBDOMAIN
   if (cleanTargetDomain.endsWith('.' + cookieDomain)) {
+    return true;
+  }
+  
+  // PARENT DOMAIN (.hepsiburada.com → oauth.hepsiburada.com)
+  if (cookieDomain.startsWith('.') && cleanTargetDomain.endsWith(cookieDomain)) {
     return true;
   }
   
@@ -218,7 +313,7 @@ function shouldSendCookie(cookieData, targetDomain, targetUrl) {
 }
 __name(shouldSendCookie, "shouldSendCookie");
 
-// COOKIE GÜNCELLEME - DETAYLI DEBUG
+// COOKIE GÜNCELLEME - AKILLI
 function updateCookiesFromResponse(response, requestUrl) {
   const setCookieHeader = response.headers.get("set-cookie");
   if (!setCookieHeader) {
@@ -237,45 +332,25 @@ function updateCookiesFromResponse(response, requestUrl) {
   cookies.forEach((cookieStr, index) => {
     console.log(`\n🍪 Cookie ${index + 1}: ${cookieStr}`);
     
-    const parts = cookieStr.split(';').map(part => part.trim());
-    const [nameValue, ...attributes] = parts;
-    const [name, value] = nameValue.split('=');
+    const parsed = parseCookieString(cookieStr, new URL(requestUrl).hostname);
     
-    console.log(`   🔹 Name: ${name}`);
-    console.log(`   🔹 Value: ${value ? value.substring(0, 30) + '...' : 'EMPTY'}`);
-    console.log(`   🔹 Attributes:`, attributes);
-    
-    if (name && value) {
-      const cookieData = {
-        value: value,
-        domain: extractAttribute(attributes, 'domain') || new URL(requestUrl).hostname,
-        path: extractAttribute(attributes, 'path') || '/',
-        secure: attributes.some(attr => attr.toLowerCase() === 'secure'),
-        httpOnly: attributes.some(attr => attr.toLowerCase() === 'httponly'),
-        expirationDate: extractExpiration(attributes)
-      };
-      
-      console.log(`   🔹 Cookie Data:`, {
-        domain: cookieData.domain,
-        path: cookieData.path,
-        secure: cookieData.secure,
-        httpOnly: cookieData.httpOnly
-      });
+    if (parsed && parsed.name && parsed.data) {
+      const { name, data } = parsed;
       
       if (globalCookies.has(name)) {
         const oldValue = globalCookies.get(name).value;
-        globalCookies.set(name, cookieData);
+        globalCookies.set(name, data);
         console.log(`   🔄 Cookie GÜNCELLENDİ: ${name}`);
         console.log(`      ESKİ: ${oldValue.substring(0, 30)}...`);
-        console.log(`      YENİ: ${value.substring(0, 30)}...`);
+        console.log(`      YENİ: ${data.value.substring(0, 30)}...`);
         updatedCount++;
       } else {
-        globalCookies.set(name, cookieData);
+        globalCookies.set(name, data);
         console.log(`   ➕ YENİ Cookie EKLENDİ: ${name}`);
         addedCount++;
       }
     } else {
-      console.log(`   ❌ Geçersiz cookie: name=${name}, value=${value}`);
+      console.log(`   ❌ Geçersiz cookie: ${cookieStr}`);
     }
   });
   
@@ -283,29 +358,6 @@ function updateCookiesFromResponse(response, requestUrl) {
   showCurrentCookies();
 }
 __name(updateCookiesFromResponse, "updateCookiesFromResponse");
-
-function extractAttribute(attributes, attrName) {
-  const attr = attributes.find(a => a.toLowerCase().startsWith(attrName.toLowerCase() + '='));
-  return attr ? attr.split('=')[1] : null;
-}
-__name(extractAttribute, "extractAttribute");
-
-function extractExpiration(attributes) {
-  const expiresAttr = attributes.find(a => a.toLowerCase().startsWith('expires='));
-  if (expiresAttr) {
-    const expiresValue = expiresAttr.split('=')[1];
-    return new Date(expiresValue).getTime() / 1000;
-  }
-  
-  const maxAgeAttr = attributes.find(a => a.toLowerCase().startsWith('max-age='));
-  if (maxAgeAttr) {
-    const maxAge = parseInt(maxAgeAttr.split('=')[1]);
-    return Date.now() / 1000 + maxAge;
-  }
-  
-  return null;
-}
-__name(extractExpiration, "extractExpiration");
 
 // COOKIE API
 async function getFreshCookies(useManual = false) {
@@ -332,6 +384,7 @@ function showCurrentCookies() {
     console.log(`      🌐 Domain: ${cookieData.domain}`);
     console.log(`      📁 Path: ${cookieData.path}`);
     console.log(`      🚩 Flags: ${flags.join(', ') || 'None'}`);
+    console.log(`      🔒 SameSite: ${cookieData.sameSite}`);
     console.log(`      ⏰ Expires: ${cookieData.expirationDate ? new Date(cookieData.expirationDate * 1000).toISOString() : 'Session'}`);
     console.log("   ──────────────────────────────────────────────────────────");
   });
@@ -405,7 +458,7 @@ function delay(ms) {
 }
 __name(delay, "delay");
 
-// XSRF TOKEN ALMA - DETAYLI DEBUG
+// XSRF TOKEN ALMA - GELİŞMİŞ
 async function getXsrfToken(selectedHeaders) {
   console.log("\n" + "🔄".repeat(40));
   console.log("🔄 XSRF TOKEN ALMA BAŞLIYOR");
@@ -529,7 +582,7 @@ async function getOtpCode(email) {
 }
 __name(getOtpCode, "getOtpCode");
 
-// POST REQUEST - DETAYLI DEBUG
+// POST REQUEST - GELİŞMİŞ
 async function makePostRequest(url, body, xsrfToken, selectedHeaders, requestName = "POST") {
   console.log("\n" + "🎯".repeat(40));
   console.log(`🎯 ${requestName} İSTEĞİ BAŞLIYOR`);
@@ -622,7 +675,7 @@ async function makePostRequest(url, body, xsrfToken, selectedHeaders, requestNam
 }
 __name(makePostRequest, "makePostRequest");
 
-// ANA KAYIT FONKSİYONU - DETAYLI DEBUG
+// ANA KAYIT FONKSİYONU - GELİŞMİŞ
 async function startRegistration(email, useManualCookies = false) {
   if (isProcessing) {
     return { success: false, error: "Zaten işlem devam ediyor" };
@@ -630,12 +683,12 @@ async function startRegistration(email, useManualCookies = false) {
   
   isProcessing = true;
   console.log("=".repeat(80));
-  console.log("🚀 DETAYLI DEBUG KAYIT BAŞLATILIYOR");
+  console.log("🚀 AKILLI COOKIE SİSTEMİ İLE KAYIT BAŞLATILIYOR");
   console.log("📧 Email:", email);
   console.log("=".repeat(80));
   
   try {
-    console.log("\n🔧 1. ADIM: Cookie'ler yükleniyor...");
+    console.log("\n🔧 1. ADIM: Akıllı cookie yükleme...");
     const cookieSuccess = await getFreshCookies(useManualCookies);
     if (!cookieSuccess) {
       throw new Error("Cookie'ler alınamadı");
@@ -671,8 +724,8 @@ async function startRegistration(email, useManualCookies = false) {
     
     console.log("🎉 1. POST BAŞARILI - REFERENCE ID:", result1.data.data.referenceId);
     
-    console.log("\n⏳ 4. ADIM: OTP email'inin gelmesi bekleniyor (15 saniye)...");
-    await delay(15000);
+    console.log("\n⏳ 4. ADIM: OTP email'inin gelmesi bekleniyor (20 saniye)...");
+    await delay(20000);
     
     console.log("\n🔧 5. ADIM: OTP kodu alınıyor...");
     const otpCode = await getOtpCode(email);
@@ -710,8 +763,8 @@ async function startRegistration(email, useManualCookies = false) {
     
     console.log("🎉 2. POST BAŞARILI - REQUEST ID:", result2.data.requestId);
     
-    console.log("\n⏳ 7. ADIM: Kayıt öncesi bekleniyor (3 saniye)...");
-    await delay(3000);
+    console.log("\n⏳ 7. ADIM: Kayıt öncesi bekleniyor (5 saniye)...");
+    await delay(5000);
     
     console.log("\n🔧 8. ADIM: 3. POST için YENİ XSRF Token alınıyor...");
     let xsrfToken3 = await getXsrfToken(selectedHeaders);
@@ -815,7 +868,7 @@ var worker_default = {
         const email = url.searchParams.get("email") || getFormattedEmail();
         const manualMode = url.searchParams.get("manual") === "true" || true;
         
-        console.log("🎯 DETAYLI DEBUG KAYIT BAŞLATILIYOR:");
+        console.log("🎯 AKILLI COOKIE SİSTEMİ İLE KAYIT BAŞLATILIYOR:");
         console.log("   📧 Email:", email);
         console.log("   🔧 Mod:", manualMode ? "MANUEL" : "OTOMATİK");
         
@@ -849,7 +902,7 @@ var worker_default = {
         
         return new Response(JSON.stringify({
           success: true,
-          message: "Cookie testi tamamlandı",
+          message: "Akıllı cookie testi tamamlandı",
           cookieCount: globalCookies.size,
           cookies: Array.from(globalCookies.entries())
         }, null, 2), {
@@ -873,11 +926,20 @@ var worker_default = {
     }
     
     return new Response(JSON.stringify({
-      message: "Hepsiburada Otomatik Kayıt API - DETAYLI DEBUG",
+      message: "Hepsiburada Otomatik Kayıt API - AKILLI COOKIE SİSTEMİ",
       endpoints: {
-        "/register": "Detaylı debug ile kayıt başlat",
+        "/register": "Akıllı cookie sistemi ile kayıt başlat",
         "/test-cookies": "Cookie testi"
-      }
+      },
+      features: [
+        "✅ Akıllı cookie parsing - otomatik format düzeltme",
+        "✅ Domain otomatik düzeltme - .hepsiburada.com",
+        "✅ Secure flag otomatik ekleme",
+        "✅ Tüm cookie attribute'leri doğru işleme",
+        "✅ API cookie'leri doğru formatlama",
+        "✅ Gelişmiş cookie gönderme kuralları",
+        "✅ Detaylı logging ve debug"
+      ]
     }, null, 2), {
       headers: { 
         "Content-Type": "application/json", 

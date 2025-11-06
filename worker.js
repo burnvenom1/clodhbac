@@ -13,22 +13,96 @@ var EMAIL_LIST = [
 ];
 
 const COOKIE_API_URL = "https://burnrndr.onrender.com/last-cookies";
-const DEBUG_MODE = true; // 👈 DEBUG AÇ
+const DEBUG_MODE = false;
 
-// GLOBAL TASK STORAGE - SON 100 İŞLEM
-const recentTasks = [];
-const MAX_TASKS = 100;
+// COOKIE YÖNETİCİSİ - SET BAZINDA DAĞITIM
+var cookieManager = {
+  cachedCookieSets: {},
+  currentSetIndex: 0,
+  currentCookieIndex: 0,
+  lastFetchTime: 0,
+  
+  async getCookieSet() {
+    // Cookie yoksa veya 5 dakika geçtiyse yenile
+    if (Object.keys(this.cachedCookieSets).length === 0 || Date.now() - this.lastFetchTime > 300000) {
+      await this.refreshCookies();
+    }
+    
+    const setKeys = Object.keys(this.cachedCookieSets);
+    if (setKeys.length === 0) {
+      throw new Error("Cookie set bulunamadı");
+    }
+    
+    // Sıradaki set'i al
+    const currentSetKey = setKeys[this.currentSetIndex];
+    const currentSet = this.cachedCookieSets[currentSetKey];
+    
+    console.log(`🎲 Set: ${currentSetKey}, ${currentSet.length} cookie verildi`);
+    
+    // Index'leri güncelle (döngüsel)
+    this.currentSetIndex = (this.currentSetIndex + 1) % setKeys.length;
+    
+    return currentSet;
+  },
+  
+  async refreshCookies() {
+    console.log("🔄 Cookie setleri yenileniyor...");
+    
+    try {
+      const response = await fetch(COOKIE_API_URL);
+      const data = await response.json();
+      
+      // Set'leri ayır (birleştirme YOK!)
+      this.cachedCookieSets = {};
+      Object.keys(data).forEach(key => {
+        if (key.startsWith('set') && Array.isArray(data[key])) {
+          this.cachedCookieSets[key] = data[key];
+        }
+      });
+      
+      this.currentSetIndex = 0;
+      this.currentCookieIndex = 0;
+      this.lastFetchTime = Date.now();
+      
+      const totalSets = Object.keys(this.cachedCookieSets).length;
+      const totalCookies = Object.values(this.cachedCookieSets).reduce((sum, set) => sum + set.length, 0);
+      
+      console.log(`✅ ${totalSets} set yüklendi (toplam ${totalCookies} cookie)`);
+      
+    } catch (error) {
+      console.log("❌ Cookie alınamadı:", error.message);
+      throw error;
+    }
+  },
+  
+  getStatus() {
+    const setKeys = Object.keys(this.cachedCookieSets);
+    const currentSetKey = setKeys[this.currentSetIndex];
+    const currentSet = this.cachedCookieSets[currentSetKey] || [];
+    
+    return {
+      totalSets: setKeys.length,
+      currentSet: currentSetKey,
+      currentSetSize: currentSet.length,
+      currentSetIndex: this.currentSetIndex,
+      lastFetchTime: this.lastFetchTime,
+      timeSinceLastFetch: this.lastFetchTime ? Date.now() - this.lastFetchTime : null,
+      allSets: setKeys.reduce((acc, key) => {
+        acc[key] = this.cachedCookieSets[key].length;
+        return acc;
+      }, {})
+    };
+  }
+};
 
 // OPTİMİZE LOG FONKSİYONLARI
 function debugLog(...args) {
   if (DEBUG_MODE) console.log(...args);
 }
-__name(debugLog, "debugLog");
 
 function errorLog(...args) {
   console.log(...args);
 }
-__name(errorLog, "errorLog");
 
 // HEADER SET
 var HEADER_SETS = [
@@ -82,7 +156,6 @@ function createIsolatedRegistration() {
     const duration = Date.now() - instance.startTime;
     debugLog(`✅ [${instance.requestId}] Instance temizlendi (${duration}ms)`);
   };
-  __name(instance.cleanup, "cleanup");
 
   // İŞLEM BAŞI TEMİZLİK
   instance.initializeCleanState = function() {
@@ -98,7 +171,6 @@ function createIsolatedRegistration() {
     
     debugLog(`✨ [${instance.requestId}] Başlangıç temizliği tamamlandı`);
   };
-  __name(instance.initializeCleanState, "initializeCleanState");
 
   // HELPER FONKSİYONLAR
   instance.extractAttribute = function(attributes, attrName) {
@@ -106,7 +178,6 @@ function createIsolatedRegistration() {
     const attr = attributes.find(a => a.toLowerCase().startsWith(attrName.toLowerCase() + '='));
     return attr ? attr.split('=')[1] : null;
   };
-  __name(instance.extractAttribute, "extractAttribute");
 
   instance.extractSameSite = function(attributes) {
     if (!instance.isActive) return 'Lax';
@@ -119,7 +190,6 @@ function createIsolatedRegistration() {
     }
     return 'Lax';
   };
-  __name(instance.extractSameSite, "extractSameSite");
 
   instance.extractExpiration = function(attributes) {
     if (!instance.isActive) return null;
@@ -137,66 +207,47 @@ function createIsolatedRegistration() {
     
     return null;
   };
-  __name(instance.extractExpiration, "extractExpiration");
 
-  // OTOMATİK COOKIE YÜKLEME
-  instance.loadInitialCookies = async function() {
-    if (!instance.isActive) return false;
+  // OTOMATİK COOKIE YÜKLEME - SET BAZINDA
+instance.loadInitialCookies = async function() {
+  if (!instance.isActive) return false;
+  
+  console.log(`👤 [${instance.requestId}] Cookie set yükleniyor...`);
+  
+  try {
+    instance.cookies.clear();
     
-    debugLog(`👤 [${instance.requestId}] Başlangıç cookie'leri yükleniyor...`);
+    // 👇 TÜM SET'I AL (tek cookie değil)
+    const cookieSet = await cookieManager.getCookieSet();
     
-    try {
-      // Önce mevcut cookie'leri temizle
-      instance.cookies.clear();
-      
-      const response = await fetch(COOKIE_API_URL);
-      if (!response.ok) throw new Error(`API hatası: ${response.status}`);
-      
-      const cookieData = await response.json();
-      let cookiesArray;
-      
-      if (cookieData.set1 && Array.isArray(cookieData.set1)) {
-        const setKeys = Object.keys(cookieData).filter(key => key.startsWith('set'));
-        debugLog(`🔍 [${instance.requestId}] Bulunan setler: ${setKeys.join(', ')}`);
-        
-        if (setKeys.length === 0) throw new Error("Cookie set bulunamadı");
-        
-        const randomSetKey = setKeys[Math.floor(Math.random() * setKeys.length)];
-        cookiesArray = cookieData[randomSetKey];
-        debugLog(`🎲 [${instance.requestId}] Seçilen cookie set: ${randomSetKey}`);
-      } 
-      else if (Array.isArray(cookieData)) {
-        cookiesArray = cookieData;
-        debugLog(`📥 [${instance.requestId}] API'den ${cookiesArray.length} cookie alındı`);
-      } else {
-        throw new Error(`API formatı beklenmiyor: ${typeof cookieData}`);
-      }
-      
-      // Yeni cookie'leri yükle
-      cookiesArray.forEach(cookie => {
-        if (cookie.name && cookie.value && instance.isActive) {
-          instance.cookies.set(cookie.name, {
-            value: cookie.value,
-            domain: cookie.domain,
-            path: cookie.path || '/',
-            secure: cookie.secure !== undefined ? cookie.secure : true,
-            httpOnly: cookie.httpOnly || false,
-            sameSite: cookie.sameSite || 'Lax',
-            expirationDate: cookie.expires || cookie.expirationDate
-          });
-          debugLog(`✅ [${instance.requestId}] ${cookie.name} yüklendi`);
-        }
-      });
-      
-      debugLog(`🎯 [${instance.requestId}] ${instance.cookies.size} cookie yüklendi`);
-      return true;
-      
-    } catch (error) {
-      errorLog(`❌ [${instance.requestId}] Cookie alınamadı:`, error.message);
-      return false;
+    if (!cookieSet || cookieSet.length === 0) {
+      throw new Error("Cookie set boş");
     }
-  };
-  __name(instance.loadInitialCookies, "loadInitialCookies");
+    
+    // 👇 SET'TEKİ TÜM COOKIE'LERİ YÜKLE
+    let loadedCount = 0;
+    cookieSet.forEach(cookie => {
+      if (cookie && cookie.name && cookie.value) {
+        instance.cookies.set(cookie.name, {
+          value: cookie.value,
+          domain: cookie.domain,
+          path: cookie.path || '/',
+          secure: cookie.secure !== undefined ? cookie.secure : true,
+          httpOnly: cookie.httpOnly || false,
+          sameSite: cookie.sameSite || 'Lax'
+        });
+        loadedCount++;
+      }
+    });
+    
+    console.log(`✅ [${instance.requestId}] ${loadedCount} cookie yüklendi`);
+    return loadedCount > 0;
+    
+  } catch (error) {
+    console.log(`❌ [${instance.requestId}] Cookie hatası:`, error.message);
+    return false;
+  }
+};
 
   // COOKIE HEADER OLUŞTURMA
   instance.getCookieHeaderForDomain = function(targetUrl) {
@@ -221,7 +272,6 @@ function createIsolatedRegistration() {
       return "";
     }
   };
-  __name(instance.getCookieHeaderForDomain, "getCookieHeaderForDomain");
 
   // COOKIE GÖNDERME KURALLARI
   instance.shouldSendCookie = function(cookieData, targetDomain, targetUrl) {
@@ -249,7 +299,6 @@ function createIsolatedRegistration() {
     
     return false;
   };
-  __name(instance.shouldSendCookie, "shouldSendCookie");
 
   // COOKIE GÜNCELLEME
   instance.updateCookiesFromResponse = function(response, requestUrl) {
@@ -299,7 +348,6 @@ function createIsolatedRegistration() {
     
     debugLog(`✅ [${instance.requestId}] ${updatedCount} cookie güncellendi, ${addedCount} yeni cookie eklendi`);
   };
-  __name(instance.updateCookiesFromResponse, "updateCookiesFromResponse");
 
   // RANDOM HEADER GENERATOR
   instance.getRandomHeaders = function() {
@@ -316,7 +364,6 @@ function createIsolatedRegistration() {
     debugLog(`🎭 [${instance.requestId}] Header set seçildi`);
     return headers;
   };
-  __name(instance.getRandomHeaders, "getRandomHeaders");
 
   // EMAIL FORMATLAMA
   instance.getFormattedEmail = function() {
@@ -328,7 +375,6 @@ function createIsolatedRegistration() {
     const random2 = Math.random().toString(36).substring(2, 5);
     return `${username}.${random1}@${random2}.${domain}`;
   };
-  __name(instance.getFormattedEmail, "getFormattedEmail");
 
   // FINGERPRINT OLUŞTURMA
   instance.getFingerprint = function() {
@@ -342,7 +388,6 @@ function createIsolatedRegistration() {
     debugLog(`🆕 [${instance.requestId}] Fingerprint oluşturuldu`);
     return uuid;
   };
-  __name(instance.getFingerprint, "getFingerprint");
 
   // RASTGELE TÜRK İSMİ
   instance.getRandomTurkishName = function() {
@@ -351,7 +396,6 @@ function createIsolatedRegistration() {
     const names = ["Ahmet", "Mehmet", "Mustafa", "Ali", "Ayşe", "Fatma", "Emine", "Hatice"];
     return names[Math.floor(Math.random() * names.length)];
   };
-  __name(instance.getRandomTurkishName, "getRandomTurkishName");
 
   // DELAY FONKSİYONU
   instance.delay = function(ms) {
@@ -360,7 +404,6 @@ function createIsolatedRegistration() {
     debugLog(`⏳ [${instance.requestId}] ${ms}ms bekleniyor...`);
     return new Promise((resolve) => setTimeout(resolve, ms));
   };
-  __name(instance.delay, "delay");
 
   // XSRF TOKEN ALMA
   instance.getXsrfToken = async function(selectedHeaders) {
@@ -436,7 +479,6 @@ function createIsolatedRegistration() {
       return null;
     }
   };
-  __name(instance.getXsrfToken, "getXsrfToken");
 
   // OTP KODU ALMA
   instance.getOtpCode = async function(email) {
@@ -470,7 +512,6 @@ function createIsolatedRegistration() {
       return null;
     }
   };
-  __name(instance.getOtpCode, "getOtpCode");
 
   // POST REQUEST
   instance.makePostRequest = async function(url, body, xsrfToken, selectedHeaders, requestName = "POST") {
@@ -542,7 +583,6 @@ function createIsolatedRegistration() {
       return { success: false, error: error.message };
     }
   };
-  __name(instance.makePostRequest, "makePostRequest");
 
   // ANA KAYIT FONKSİYONU - TAMAMEN İZOLE
   instance.startRegistration = async function(email) {
@@ -691,13 +731,15 @@ function createIsolatedRegistration() {
       instance.cleanup();
     }
   };
-  __name(instance.startRegistration, "startRegistration");
 
   return instance;
 }
-__name(createIsolatedRegistration, "createIsolatedRegistration");
 
-// WORKER - SEÇENEK 1 + SON 100 İŞLEM
+// Global task storage - SON 100 İŞLEM
+const recentTasks = [];
+const MAX_TASKS = 100;
+
+// WORKER - SEÇENEK 1 + COOKIE YÖNETİCİSİ
 var worker_default = {
   async fetch(request, env, ctx) {
     console.log("📥 Yeni request:", request.method, request.url);
@@ -721,7 +763,7 @@ var worker_default = {
       
       console.log(`🎯 PARALEL KAYIT BAŞLATILIYOR - Instance: ${registration.requestId}, Email: ${email}`);
       
-      // 👇 TASK'I KAYDET (BAŞLANGIÇ)
+      // TASK'I KAYDET (BAŞLANGIÇ)
       const task = {
         id: registration.requestId,
         email: email,
@@ -733,24 +775,24 @@ var worker_default = {
       };
       
       recentTasks.unshift(task);
-      // 👇 SON 100'Ü KORU
+      // SON 100'Ü KORU
       if (recentTasks.length > MAX_TASKS) {
         recentTasks.splice(MAX_TASKS);
       }
       
-      // 👇 ARKA PLANDA ÇALIŞTIR (await YOK!)
+      // ARKA PLANDA ÇALIŞTIR (await YOK!)
       ctx.waitUntil((async () => {
         try {
           const result = await registration.startRegistration(email);
           
-          // 👇 TASK'I GÜNCELLE (SONUÇ)
+          // TASK'I GÜNCELLE (SONUÇ)
           task.status = result.success ? "completed" : "failed";
           task.endTime = new Date().toISOString();
           task.result = result;
           
           console.log(`✅ ARKA PLAN SONUÇ - Instance: ${registration.requestId}, Success: ${result.success}`);
         } catch (error) {
-          // 👇 TASK'I GÜNCELLE (HATA)
+          // TASK'I GÜNCELLE (HATA)
           task.status = "error";
           task.endTime = new Date().toISOString();
           task.error = error.message;
@@ -759,7 +801,7 @@ var worker_default = {
         }
       })());
       
-      // 👇 HEMEN RESPONSE DÖN
+      // HEMEN RESPONSE DÖN
       return new Response(JSON.stringify({
         success: true,
         message: "Kayıt başlatıldı",
@@ -794,17 +836,32 @@ var worker_default = {
       });
     }
     
-    // 🧪 TEST COOKIES
-    if (url.pathname === "/test-cookies") {
-      const registration = createIsolatedRegistration();
+    // 🔧 COOKIE YÖNETİCİ DURUMU
+    if (url.pathname === "/cookie-status") {
+      const status = cookieManager.getStatus();
       
+      return new Response(JSON.stringify({
+        cookieManager: status,
+        message: "Cookie yöneticisi durumu"
+      }, null, 2), {
+        headers: { 
+          "Content-Type": "application/json", 
+          ...corsHeaders 
+        }
+      });
+    }
+    
+    // 🔄 COOKIE'LERİ YENİLE
+    if (url.pathname === "/refresh-cookies") {
       try {
-        await registration.loadInitialCookies();
+        cookieManager.cachedCookies = [];
+        cookieManager.lastFetchTime = 0;
+        await cookieManager.refreshCookies();
         
         return new Response(JSON.stringify({
           success: true,
-          message: "Cookie testi tamamlandı",
-          cookieCount: registration.cookies.size
+          message: "Cookie'ler yenilendi",
+          status: cookieManager.getStatus()
         }, null, 2), {
           headers: { 
             "Content-Type": "application/json", 
@@ -827,11 +884,18 @@ var worker_default = {
     
     // 📋 ANA SAYFA
     return new Response(JSON.stringify({
-      message: "Hepsiburada Kayıt API - Seçenek 1 + Son 100 İşlem",
+      message: "Hepsiburada Kayıt API - Cookie Yöneticili Versiyon",
       endpoints: {
         "/register": "Paralel kayıt başlat (hemen response)",
         "/recent-tasks": "Son 100 işlemi görüntüle", 
-        "/test-cookies": "Cookie testi"
+        "/cookie-status": "Cookie yöneticisi durumu",
+        "/refresh-cookies": "Cookie'leri manuel yenile"
+      },
+      cookieFeatures: {
+        "Sıralı Dağıtım": "Cookie'leri sırayla dağıtır",
+        "5 Dakika Cache": "5 dakika boyunca aynı cookie listesini kullanır",
+        "Otomatik Yenileme": "5 dakika sonra yeni cookie listesi alır",
+        "Döngüsel": "Liste bitince baştan başlar"
       }
     }, null, 2), {
       headers: { 

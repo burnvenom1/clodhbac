@@ -283,31 +283,31 @@ function createIsolatedRegistration() {
   };
   __name2(instance.delay, "delay");
 
-instance.waitForOtp = async function(email, maxWaitTime = 15000, checkInterval = 15000) {
-  debugLog(`📱 [${instance.requestId}] OTP bekleniyor (${maxWaitTime}ms sonra 1 kez kontrol)...`);
-  
-  // Önce bekle
-  await instance.delay(maxWaitTime);
-  
-  // Sonra 1 kere kontrol et
-  const otpCode = await instance.getOtpCode(email);
-  
-  if (otpCode) {
-    debugLog(`✅ [${instance.requestId}] OTP bulundu: ${otpCode}`);
-    return otpCode;
-  } else {
-    debugLog(`❌ [${instance.requestId}] OTP bulunamadı`);
+  instance.waitForOtp = async function(email, maxWaitTime = 45000, checkInterval = 3000) {
+    debugLog(`📱 [${instance.requestId}] OTP bekleniyor (${maxWaitTime}ms)...`);
+    const startTime = Date.now();
+    let attempt = 0;
+    
+    while (Date.now() - startTime < maxWaitTime) {
+      attempt++;
+      const otpCode = await instance.getOtpCode(email);
+      
+      if (otpCode) {
+        debugLog(`✅ [${instance.requestId}] OTP ${attempt}. denemede bulundu: ${otpCode}`);
+        return otpCode;
+      }
+      
+      debugLog(`⏳ [${instance.requestId}] OTP henüz yok (${attempt}. deneme), ${checkInterval}ms sonra tekrar...`);
+      await instance.delay(checkInterval);
+    }
+    
+    errorLog(`❌ [${instance.requestId}] OTP zaman aşımı (${maxWaitTime}ms)`);
     return null;
-  }
-};
+  };
   __name2(instance.waitForOtp, "waitForOtp");
 
-instance.getXsrfToken = async function(selectedHeaders, forceRefresh = false) {
+ instance.getXsrfToken = async function(selectedHeaders, forceRefresh = false) {
   debugLog(`🔄 [${instance.requestId}] XSRF Token alınıyor...`);
-  
-  // DEBUG: Mevcut cookie'leri kontrol et
-  const currentXsrfCookie = instance.cookies.get('XSRF-TOKEN');
-  debugLog(`🍪 MEVCUT XSRF COOKIE: ${currentXsrfCookie ? currentXsrfCookie.value.substring(0, 30) + '...' : 'YOK'}`);
   
   const xsrfUrl = "https://oauth.hepsiburada.com/api/authenticate/xsrf-token";
   
@@ -326,10 +326,7 @@ instance.getXsrfToken = async function(selectedHeaders, forceRefresh = false) {
   };
   
   const cookieHeader = instance.getCookieHeaderForDomain(xsrfUrl);
-  if (cookieHeader) {
-    headers["cookie"] = cookieHeader;
-    debugLog(`📨 GÖNDERİLEN COOKIE SAYISI: ${cookieHeader.split(';').length}`);
-  }
+  if (cookieHeader) headers["cookie"] = cookieHeader;
   
   if (selectedHeaders.SecCHUA) {
     headers["sec-ch-ua"] = selectedHeaders.SecCHUA;
@@ -345,24 +342,8 @@ instance.getXsrfToken = async function(selectedHeaders, forceRefresh = false) {
     
     debugLog(`📡 [${instance.requestId}] XSRF Response Status: ${response.status}`);
     
-    // DEBUG: Set-Cookie header'ını kontrol et
-    const setCookieHeader = response.headers.get("set-cookie");
-    if (setCookieHeader) {
-      debugLog(`🎯 GELEN SET-COOKIE: ${setCookieHeader}`);
-      // XSRF-TOKEN'i extract et
-      const xsrfMatch = setCookieHeader.match(/XSRF-TOKEN=([^;]+)/);
-      if (xsrfMatch) {
-        const incomingXsrf = decodeURIComponent(xsrfMatch[1]);
-        debugLog(`🆕 GELEN XSRF-TOKEN: ${incomingXsrf.substring(0, 30)}...`);
-      }
-    }
-    
     // 1. ÖNCE Cookie'leri güncelle
     instance.updateCookiesFromResponse(response, xsrfUrl);
-    
-    // DEBUG: Güncellenmiş cookie'yi kontrol et
-    const updatedXsrfCookie = instance.cookies.get('XSRF-TOKEN');
-    debugLog(`🔄 GÜNCELLENMİŞ XSRF COOKIE: ${updatedXsrfCookie ? updatedXsrfCookie.value.substring(0, 30) + '...' : 'YOK'}`);
     
     let xsrfToken = null;
     
@@ -372,32 +353,26 @@ instance.getXsrfToken = async function(selectedHeaders, forceRefresh = false) {
         const responseData = await response.json();
         if (responseData && responseData.token) {
           xsrfToken = responseData.token;
-          debugLog(`✅ JSON'DAN XSRF TOKEN: ${xsrfToken.substring(0, 30)}...`);
-          
-          // DEBUG: JSON token ile cookie token karşılaştır
-          if (updatedXsrfCookie && xsrfToken !== updatedXsrfCookie.value) {
-            debugLog(`🚨 UYUŞMAZLIK: JSON token ≠ Cookie token`);
-          }
+          debugLog(`✅ [${instance.requestId}] XSRF Token JSON'dan alındı`);
         }
       } catch (e) {
         debugLog(`❌ [${instance.requestId}] XSRF JSON parse hatası`);
       }
     }
     
-    // 3. Cookie'den token al (JSON yoksa)
+    // 3. Cookie'den token al (JSON yoksa veya güvenilir değilse)
     if (!xsrfToken) {
-      if (updatedXsrfCookie) {
-        xsrfToken = updatedXsrfCookie.value;
-        debugLog(`🍪 COOKIE'DEN XSRF TOKEN: ${xsrfToken.substring(0, 30)}...`);
+      const cookieToken = instance.cookies.get('XSRF-TOKEN');
+      if (cookieToken) {
+        xsrfToken = cookieToken.value;
+        debugLog(`🍪 [${instance.requestId}] XSRF Token cookie'den alındı`);
       }
     }
     
-    // DEBUG: Son durum
-    debugLog(`🎯 DÖNECEK XSRF TOKEN: ${xsrfToken ? xsrfToken.substring(0, 30) + '...' : 'NULL'}`);
-    debugLog(`🍪 COOKIE'DEKİ XSRF TOKEN: ${updatedXsrfCookie ? updatedXsrfCookie.value.substring(0, 30) + '...' : 'NULL'}`);
-    
     if (!xsrfToken) {
       debugLog(`❌ [${instance.requestId}] XSRF Token bulunamadı`);
+    } else {
+      debugLog(`🎯 [${instance.requestId}] XSRF Token: ${xsrfToken.substring(0, 30)}...`);
     }
     
     return xsrfToken;
@@ -569,7 +544,7 @@ instance.getXsrfToken = async function(selectedHeaders, forceRefresh = false) {
       debugLog(`✅ [${instance.requestId}] 1. POST BAŞARILI - ReferenceId: ${result1Data.data?.referenceId}`);
 
       debugLog(`\n📋 [${instance.requestId}] 4. ADIM: OTP bekleniyor...`);
-      const otpCode = await instance.waitForOtp(email, 15000, 15000);
+      const otpCode = await instance.waitForOtp(email, 45000, 3000);
       if (!otpCode) {
         throw new Error("OTP kodu alınamadı");
       }

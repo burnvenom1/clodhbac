@@ -881,11 +881,60 @@ var worker_default = {
       });
     }
     
-    // COOKIE'LERİ YENİLE
+    // 🔄 COOKIE'LERİ YENİLE
     if (url.pathname === "/refresh-cookies") {
       try {
-        cookieManager.cachedCookieSets = {};
+        cookieManager.cachedCookies = [];
         cookieManager.lastFetchTime = 0;
         await cookieManager.refreshCookies();
         
         return new Response(JSON.stringify({
+          success: true,
+          message: "Cookie'ler yenilendi",
+          status: cookieManager.getStatus()
+        }, null, 2), {
+          headers: { 
+            "Content-Type": "application/json", 
+            ...corsHeaders 
+          }
+        });
+      } catch (error) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message
+        }, null, 2), {
+          status: 500,
+          headers: { 
+            "Content-Type": "application/json", 
+            ...corsHeaders 
+          }
+        });
+      }
+    }
+    
+    // 📋 ANA SAYFA
+    return new Response(JSON.stringify({
+      message: "Hepsiburada Kayıt API - Cookie Yöneticili Versiyon",
+      endpoints: {
+        "/register": "Paralel kayıt başlat (hemen response)",
+        "/recent-tasks": "Son 100 işlemi görüntüle", 
+        "/cookie-status": "Cookie yöneticisi durumu",
+        "/refresh-cookies": "Cookie'leri manuel yenile"
+      },
+      cookieFeatures: {
+        "Sıralı Dağıtım": "Cookie'leri sırayla dağıtır",
+        "5 Dakika Cache": "5 dakika boyunca aynı cookie listesini kullanır",
+        "Otomatik Yenileme": "5 dakika sonra yeni cookie listesi alır",
+        "Döngüsel": "Liste bitince baştan başlar"
+      }
+    }, null, 2), {
+      headers: { 
+        "Content-Type": "application/json", 
+        ...corsHeaders 
+      }
+    });
+  }
+};
+
+// DÜZELTİLMİŞ EXPORT - Cloudflare Workers için doğru syntax
+export default worker_default;

@@ -13,7 +13,7 @@ var EMAIL_LIST = [
 ];
 
 const COOKIE_API_URL = "https://burnrndr.onrender.com/last-cookies";
-const DEBUG_MODE = true; // ✅ DEBUG AÇIK
+const DEBUG_MODE = false;
 
 // OPTİMİZE LOG FONKSİYONLARI
 function debugLog(...args) {
@@ -52,22 +52,17 @@ var HEADER_SETS = [
   }
 ];
 
-// TAMAMEN İZOLE KAYIT SİSTEMİ
+// TAMAMEN İZOLE KAYIT SİSTEMİ - HER İŞLEM BAĞIMSIZ
 function createIsolatedRegistration() {
   const instance = {};
   
-  // HER INSTANCE TAMAMEN BAĞIMSIZ
+  // HER INSTANCE TAMAMEN BAĞIMSIZ - İŞLEM BAŞINDA TEMİZ STATE
   instance.cookies = new Map();
   instance.requestId = Math.random().toString(36).substring(2, 15);
   instance.isActive = true;
   instance.startTime = Date.now();
-
-  // ✅ INSTANCE'A ÖZEL CACHE SİSTEMİ
-  instance.localCache = {
-    cookies: null,
-    cacheTime: 0,
-    rotationIndex: Math.floor(Math.random() * 100) // Random başlangıç
-  };
+  instance.sessionFingerprint = null;
+  instance.currentXsrfToken = null;
 
   // INSTANCE TEMİZLEME FONKSİYONU
   instance.cleanup = function() {
@@ -75,23 +70,32 @@ function createIsolatedRegistration() {
     
     debugLog(`🧹 [${instance.requestId}] Instance temizleniyor...`);
     
+    // Tüm state'i temizle
     instance.cookies.clear();
+    instance.sessionFingerprint = null;
+    instance.currentXsrfToken = null;
     instance.isActive = false;
     
     const duration = Date.now() - instance.startTime;
-    debugLog(`✅ [${instance.requestId}] Instance temizlendi (${duration}ms)`);
+    debugLog(`✅ [${instance.requestId}] Instance tamamen temizlendi (${duration}ms)`);
   };
   __name(instance.cleanup, "cleanup");
 
-  // İŞLEM BAŞI TEMİZLİK
+  // İŞLEM BAŞI TAM TEMİZLİK
   instance.initializeCleanState = function() {
     debugLog(`🆕 [${instance.requestId}] Yeni temiz instance oluşturuldu`);
     
+    // Önceki state'i tamamen temizle
     instance.cookies.clear();
+    instance.sessionFingerprint = null;
+    instance.currentXsrfToken = null;
     instance.isActive = true;
     instance.startTime = Date.now();
     
-    debugLog(`✨ [${instance.requestId}] Başlangıç temizliği tamamlandı`);
+    // Yeni session fingerprint oluştur
+    instance.sessionFingerprint = instance.generateFingerprint();
+    
+    debugLog(`✨ [${instance.requestId}] Başlangıç temizliği tamamlandı - Yeni fingerprint: ${instance.sessionFingerprint}`);
   };
   __name(instance.initializeCleanState, "initializeCleanState");
 
@@ -134,20 +138,14 @@ function createIsolatedRegistration() {
   };
   __name(instance.extractExpiration, "extractExpiration");
 
-  // ✅ GÜNCELLENMİŞ COOKIE YÜKLEME - INSTANCE CACHE İLE
+  // OTOMATİK COOKIE YÜKLEME - HER İŞLEM İÇİN YENİ
   instance.loadInitialCookies = async function() {
     if (!instance.isActive) return false;
     
     debugLog(`👤 [${instance.requestId}] Başlangıç cookie'leri yükleniyor...`);
     
     try {
-      // ✅ INSTANCE ÖZEL CACHE KONTROLÜ
-      if (instance.localCache.cookies && Date.now() - instance.localCache.cacheTime < 10000) {
-        instance.cookies = new Map(instance.localCache.cookies);
-        debugLog(`♻️ [${instance.requestId}] Önbellekten cookie'ler yüklendi`);
-        return true;
-      }
-      
+      // Önce mevcut cookie'leri temizle
       instance.cookies.clear();
       
       const response = await fetch(COOKIE_API_URL);
@@ -162,13 +160,9 @@ function createIsolatedRegistration() {
         
         if (setKeys.length === 0) throw new Error("Cookie set bulunamadı");
         
-        // ✅ INSTANCE'A ÖZEL ROTATION
-        const selectedSet = setKeys[instance.localCache.rotationIndex % setKeys.length];
-        cookiesArray = cookieData[selectedSet];
-        
-        instance.localCache.rotationIndex = (instance.localCache.rotationIndex + 1) % setKeys.length;
-        
-        debugLog(`🎲 [${instance.requestId}] Seçilen cookie set: ${selectedSet} (Index: ${instance.localCache.rotationIndex})`);
+        const randomSetKey = setKeys[Math.floor(Math.random() * setKeys.length)];
+        cookiesArray = cookieData[randomSetKey];
+        debugLog(`🎲 [${instance.requestId}] Seçilen cookie set: ${randomSetKey}`);
       } 
       else if (Array.isArray(cookieData)) {
         cookiesArray = cookieData;
@@ -177,6 +171,7 @@ function createIsolatedRegistration() {
         throw new Error(`API formatı beklenmiyor: ${typeof cookieData}`);
       }
       
+      // Yeni cookie'leri yükle
       cookiesArray.forEach(cookie => {
         if (cookie.name && cookie.value && instance.isActive) {
           instance.cookies.set(cookie.name, {
@@ -188,12 +183,9 @@ function createIsolatedRegistration() {
             sameSite: cookie.sameSite || 'Lax',
             expirationDate: cookie.expires || cookie.expirationDate
           });
+          debugLog(`✅ [${instance.requestId}] ${cookie.name} yüklendi`);
         }
       });
-      
-      // ✅ INSTANCE CACHE'INI GÜNCELLE
-      instance.localCache.cookies = new Map(instance.cookies);
-      instance.localCache.cacheTime = Date.now();
       
       debugLog(`🎯 [${instance.requestId}] ${instance.cookies.size} cookie yüklendi`);
       return true;
@@ -239,14 +231,17 @@ function createIsolatedRegistration() {
     
     const cookieDomain = cookieData.domain;
     
+    // 1. EXACT MATCH: "hepsiburada.com" == "hepsiburada.com"
     if (cookieDomain === targetDomain) {
       return true;
     }
     
+    // 2. SUBDOMAIN MATCH: ".hepsiburada.com" → "oauth.hepsiburada.com"
     if (cookieDomain.startsWith('.') && targetDomain.endsWith(cookieDomain)) {
       return true;
     }
     
+    // 3. PARENT DOMAIN MATCH: "hepsiburada.com" → "oauth.hepsiburada.com"
     if (targetDomain.endsWith('.' + cookieDomain)) {
       return true;
     }
@@ -305,19 +300,38 @@ function createIsolatedRegistration() {
   };
   __name(instance.updateCookiesFromResponse, "updateCookiesFromResponse");
 
-  // RANDOM HEADER GENERATOR
+  // FINGERPRINT OLUŞTURMA - HER INSTANCE İÇİN YENİ
+  instance.generateFingerprint = function() {
+    if (!instance.isActive) return 'inactive-instance';
+    
+    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+    
+    const timestamp = Date.now().toString(36);
+    const randomPart = Math.random().toString(36).substring(2, 8);
+    
+    return `${uuid}-${timestamp}-${randomPart}`;
+  };
+  __name(instance.generateFingerprint, "generateFingerprint");
+
+  // RANDOM HEADER GENERATOR - SESSION FINGERPRINT İLE
   instance.getRandomHeaders = function() {
     if (!instance.isActive) return HEADER_SETS[0];
     
     const baseSet = HEADER_SETS[Math.floor(Math.random() * HEADER_SETS.length)];
-    const fingerprint = instance.getFingerprint();
+    
+    // Session fingerprint kullan
+    const fingerprint = instance.sessionFingerprint || instance.generateFingerprint();
     
     const headers = {
       ...baseSet,
       fingerprint: fingerprint
     };
     
-    debugLog(`🎭 [${instance.requestId}] Header set seçildi`);
+    debugLog(`🎭 [${instance.requestId}] Header set seçildi - Fingerprint: ${fingerprint}`);
     return headers;
   };
   __name(instance.getRandomHeaders, "getRandomHeaders");
@@ -333,20 +347,6 @@ function createIsolatedRegistration() {
     return `${username}.${random1}@${random2}.${domain}`;
   };
   __name(instance.getFormattedEmail, "getFormattedEmail");
-
-  // FINGERPRINT OLUŞTURMA
-  instance.getFingerprint = function() {
-    if (!instance.isActive) return 'inactive-instance';
-    
-    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c == 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-    debugLog(`🆕 [${instance.requestId}] Fingerprint oluşturuldu`);
-    return uuid;
-  };
-  __name(instance.getFingerprint, "getFingerprint");
 
   // RASTGELE TÜRK İSMİ
   instance.getRandomTurkishName = function() {
@@ -366,7 +366,7 @@ function createIsolatedRegistration() {
   };
   __name(instance.delay, "delay");
 
-  // XSRF TOKEN ALMA
+  // XSRF TOKEN ALMA - INSTANCE BAZLI
   instance.getXsrfToken = async function(selectedHeaders) {
     if (!instance.isActive) return null;
     
@@ -414,7 +414,8 @@ function createIsolatedRegistration() {
           const responseData = await response.json();
           if (responseData && responseData.token) {
             xsrfToken = responseData.token;
-            debugLog(`✅ [${instance.requestId}] XSRF Token alındı`);
+            instance.currentXsrfToken = xsrfToken; // Instance state'de sakla
+            debugLog(`✅ [${instance.requestId}] XSRF Token alındı: ${xsrfToken.substring(0, 10)}...`);
           }
         } catch (e) {
           debugLog(`❌ [${instance.requestId}] XSRF JSON parse hatası`);
@@ -426,7 +427,8 @@ function createIsolatedRegistration() {
         const xsrfMatch = setCookieHeader.match(/XSRF-TOKEN=([^;]+)/);
         if (xsrfMatch) {
           xsrfToken = decodeURIComponent(xsrfMatch[1]);
-          debugLog(`✅ [${instance.requestId}] XSRF Token header'dan alındı`);
+          instance.currentXsrfToken = xsrfToken; // Instance state'de sakla
+          debugLog(`✅ [${instance.requestId}] XSRF Token header'dan alındı: ${xsrfToken.substring(0, 10)}...`);
         }
       }
       
@@ -463,9 +465,9 @@ function createIsolatedRegistration() {
       }
       
       if (otpCode) {
-        debugLog(`🔢 [${instance.requestId}] OTP Kodu Bulundu`);
+        debugLog(`🔢 [${instance.requestId}] OTP Kodu Bulundu: ${otpCode}`);
       } else {
-        debugLog(`❌ [${instance.requestId}] OTP kodu bulunamadı`);
+        debugLog(`❌ [${instance.requestId}] OTP kodu bulunamadı - Response: ${otpResponse.substring(0, 100)}`);
       }
       
       return otpCode;
@@ -476,7 +478,7 @@ function createIsolatedRegistration() {
   };
   __name(instance.getOtpCode, "getOtpCode");
 
-  // POST REQUEST
+  // POST REQUEST - TAM İZOLE
   instance.makePostRequest = async function(url, body, xsrfToken, selectedHeaders, requestName = "POST") {
     if (!instance.isActive) {
       return { success: false, error: "Instance inactive" };
@@ -484,7 +486,8 @@ function createIsolatedRegistration() {
     
     debugLog(`🎯 [${instance.requestId}] ${requestName} isteği: ${url}`);
     
-    const currentFingerprint = selectedHeaders.fingerprint || instance.getFingerprint();
+    // Her request için instance fingerprint kullan
+    const currentFingerprint = instance.sessionFingerprint;
     
     const headers = {
       "accept": selectedHeaders.Accept,
@@ -548,17 +551,18 @@ function createIsolatedRegistration() {
   };
   __name(instance.makePostRequest, "makePostRequest");
 
-  // ✅ OPTİMİZE EDİLMİŞ KAYIT FONKSİYONU
+  // ANA KAYIT FONKSİYONU - TAMAMEN İZOLE
   instance.startRegistration = async function(email) {
-    console.log(`🚀 [${instance.requestId}] PARALEL KAYIT BAŞLATILIYOR - EMAIL:`, email);
+    console.log(`🚀 [${instance.requestId}] TAM İZOLE KAYIT BAŞLATILIYOR - EMAIL:`, email);
     
     try {
+      // İŞLEM BAŞI TAM TEMİZLİK
       instance.initializeCleanState();
       
-      debugLog(`\n🔧 [${instance.requestId}] 1. ADIM: Cookie'ler yükleniyor...`);
+      debugLog(`\n🔧 [${instance.requestId}] 1. ADIM: Başlangıç cookie'leri yükleniyor...`);
       const cookieSuccess = await instance.loadInitialCookies();
       if (!cookieSuccess) {
-        throw new Error("Cookie'ler alınamadı");
+        throw new Error("Başlangıç cookie'leri alınamadı");
       }
       
       const selectedHeaders = instance.getRandomHeaders();
@@ -599,7 +603,7 @@ function createIsolatedRegistration() {
         throw new Error("OTP kodu alınamadı");
       }
       
-      debugLog(`✅ [${instance.requestId}] OTP KODU HAZIR`);
+      debugLog(`✅ [${instance.requestId}] OTP KODU HAZIR: ${otpCode}`);
       
       debugLog(`\n🔧 [${instance.requestId}] 6. ADIM: 2. POST için XSRF Token alınıyor...`);
       let xsrfToken2 = await instance.getXsrfToken(selectedHeaders);
@@ -639,7 +643,7 @@ function createIsolatedRegistration() {
       const lastName = instance.getRandomTurkishName();
       const password = "Hepsiburada1";
       
-      debugLog(`🎭 [${instance.requestId}] Kullanıcı bilgileri hazır`);
+      debugLog(`🎭 [${instance.requestId}] Kullanıcı bilgileri hazır: ${firstName} ${lastName}`);
       
       const postBody3 = {
         subscribeEmail: true,
@@ -661,6 +665,9 @@ function createIsolatedRegistration() {
       
       if (result3.success && result3.data?.success) {
         console.log(`🎉 🎉 🎉 [${instance.requestId}] KAYIT BAŞARILI! 🎉 🎉 🎉`);
+        console.log(`📧 Email: ${email}`);
+        console.log(`🔐 Password: ${password}`);
+        console.log(`👤 Name: ${firstName} ${lastName}`);
         
         return {
           success: true,
@@ -669,7 +676,8 @@ function createIsolatedRegistration() {
           name: `${firstName} ${lastName}`,
           accessToken: result3.data.data.accessToken,
           refreshToken: result3.data.data.refreshToken,
-          requestId: instance.requestId
+          requestId: instance.requestId,
+          fingerprint: instance.sessionFingerprint
         };
       } else {
         console.log(`❌ [${instance.requestId}] KAYIT BAŞARISIZ!`);
@@ -690,6 +698,7 @@ function createIsolatedRegistration() {
         requestId: instance.requestId
       };
     } finally {
+      // İŞLEM SONU TAM TEMİZLİK
       instance.cleanup();
     }
   };
@@ -699,7 +708,7 @@ function createIsolatedRegistration() {
 }
 __name(createIsolatedRegistration, "createIsolatedRegistration");
 
-// ✅ OPTİMİZE EDİLMİŞ WORKER
+// WORKER - HER İSTEK İÇİN YENİ TAM İZOLE INSTANCE
 var worker_default = {
   async fetch(request, env, ctx) {
     debugLog("📥 Yeni request:", request.method, request.url);
@@ -717,13 +726,14 @@ var worker_default = {
     const url = new URL(request.url);
     
     if (url.pathname === "/register") {
-      // ✅ HER İSTEK TAMAMEN BAĞIMSIZ
+      // HER İSTEK İÇİN YENİ TAM İZOLE INSTANCE
       const registration = createIsolatedRegistration();
       
       try {
         const email = url.searchParams.get("email") || registration.getFormattedEmail();
         
-        console.log("🎯 Yeni paralel kayıt başlatılıyor:", email);
+        console.log("🎯 Yeni tam izole kayıt başlatılıyor:", email);
+        console.log("🔧 Instance ID:", registration.requestId);
         
         const result = await registration.startRegistration(email);
         
@@ -749,38 +759,44 @@ var worker_default = {
       }
     }
     
-    // ✅ YENİ DEBUG ENDPOINT'LERİ
-    if (url.pathname === "/debug-cookies") {
+    if (url.pathname === "/test-cookies") {
+      // TEST İÇİN DE YENİ INSTANCE
       const registration = createIsolatedRegistration();
-      await registration.loadInitialCookies();
       
-      const cookies = Array.from(registration.cookies.entries()).map(([name, data]) => ({
-        name,
-        value: data.value.substring(0, 15) + '...',
-        domain: data.domain
-      }));
-      
-      return new Response(JSON.stringify({
-        requestId: registration.requestId,
-        cookieCount: cookies.length,
-        cookies: cookies
-      }, null, 2), { headers: corsHeaders });
-    }
-    
-    if (url.pathname === "/health") {
-      return new Response(JSON.stringify({
-        status: "OK",
-        timestamp: new Date().toISOString(),
-        debug: DEBUG_MODE
-      }, null, 2), { headers: corsHeaders });
+      try {
+        await registration.loadInitialCookies();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: "Cookie testi tamamlandı",
+          cookieCount: registration.cookies.size,
+          requestId: registration.requestId
+        }, null, 2), {
+          headers: { 
+            "Content-Type": "application/json", 
+            ...corsHeaders 
+          }
+        });
+      } catch (error) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message,
+          requestId: registration.requestId
+        }, null, 2), {
+          status: 500,
+          headers: { 
+            "Content-Type": "application/json", 
+            ...corsHeaders 
+          }
+        });
+      }
     }
     
     return new Response(JSON.stringify({
-      message: "Hepsiburada Kayıt API - Paralel Versiyon",
+      message: "Hepsiburada Kayıt API - Tam İzole Versiyon",
       endpoints: {
-        "/register": "Paralel kayıt başlat",
-        "/debug-cookies": "Cookie debug",
-        "/health": "Health check"
+        "/register": "Tam izole kayıt başlat",
+        "/test-cookies": "Cookie testi"
       }
     }, null, 2), {
       headers: { 

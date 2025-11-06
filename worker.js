@@ -3,13 +3,81 @@ var __name = (target, value) => __defProp(target, "name", { value, configurable:
 
 // worker.js
 var EMAIL_LIST = [
-  "jihpngpnd@emlhub.com",
+   "jihpngpnd@emlhub.com",
   "tmrzfanje@emlpro.com", 
   "wiraypzse@emlpro.com",
   "lnmwhbvvf@emltmp.com",
   "bshuzcvvf@emltmp.com",
   "hsfsqxcug@emltmp.com",
-  "nqywhdnoh@emlhub.com"
+  "nqywhdnoh@emlhub.com",
+  "048370crsm@freeml.net",
+  "04837v1h98@freeml.net",
+  "04838e039m@freeml.net",
+  "04839mk808@freeml.net",
+  "0483aa1zj4@freeml.net",
+  "jy1c7eh2@mailpwr.com",
+  "jy1kb68h@mailpwr.com",
+  "jz6qk02m@mailpwr.com",
+  "jz6ta9hn@mailpwr.com",
+  "jz72a572@mailpwr.com",
+  "jz74ndyw@mailpwr.com",
+  "jz76sw1m@mailpwr.com",
+  "manunasodun3@mimimail.me",
+  "manun1kinyz3@mimimail.me",
+  "manupefovuz3@mimimail.me",
+  "manup0lutuj2@mimimail.me",
+  "manusyk1taw2@mimimail.me",
+  "manutinajyl3@mimimail.me",
+  "manut0sepem3@mimimail.me",
+  "lozydozajid2@10mail.xyz",
+  "hiwemubadom2@10mail.xyz",
+  "mobeliv1myn3@10mail.xyz",
+  "mymib0sejyz2@10mail.xyz",
+  "bohel1meken3@10mail.xyz",
+  "b0togovojev2@10mail.xyz",
+  "guv1s0f0tak2@10mail.xyz",
+  "ahmcemzni@10mail.org",
+  "ahmcffaeh@10mail.org",
+  "ahmcfwpfd@10mail.org",
+  "ahmcgaohd@10mail.org",
+  "ahmcgiwye@10mail.org",
+  "ahmcgoyfv@10mail.org",
+  "ahmchfabm@10mail.org",
+  "ahbzmfiun@yomail.info",
+  "ahbzmxpoh@yomail.info",
+  "ahbznddyb@yomail.info",
+  "ahbznefnq@yomail.info",
+  "ahbzognth@yomail.info",
+  "ahbzoofgb@yomail.info",
+  "ahbzoznkl@yomail.info",
+  "jwjavzvej@emltmp.com",
+  "iycfyzvej@emltmp.com",
+  "aymjdawej@emltmp.com",
+  "hcfuhawej@emltmp.com",
+  "ztotqawej@emltmp.com",
+  "bekxwawej@emltmp.com",
+  "axhbbbwej@emltmp.com",
+  "rhhzbqmgi@emlpro.com",
+  "vcfdhqmgi@emlpro.com",
+  "utcpmqmgi@emlpro.com",
+  "hqnjtqmgi@emlpro.com",
+  "qvkpyqmgi@emlpro.com",
+  "jdawermgi@emlpro.com",
+  "khhonrmgi@emlpro.com",
+  "qwxugbxai@emlhub.com",
+  "fejqjbxai@emlhub.com",
+  "fjkwmbxai@emlhub.com",
+  "tgyspbxai@emlhub.com",
+  "pzbesbxai@emlhub.com",
+  "qqkqubxai@emlhub.com",
+  "tnglxbxai@emlhub.com",
+  "04dndf7ps8@spymail.one",
+  "04dndhs6fc@spymail.one",
+  "04dndn5tw4@spymail.one",
+  "04dndsn43c@spymail.one",
+  "04dndz9z90@spymail.one",
+  "04dne23ncg@spymail.one",
+  "04dnebnewg@spymail.one"
 ];
 
 const COOKIE_API_URL = "https://burnrndr.onrender.com/last-cookies";
@@ -49,20 +117,84 @@ var HEADER_SETS = [
     "AcceptEncoding": "gzip, deflate, br",
     "CacheControl": "no-cache",
     "Connection": "keep-alive"
+  },
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="118", "Google Chrome";v="118", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  {
+    "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"macOS"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  {
+    "UserAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Linux"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "SecCHUA": null,
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0",
+    "SecCHUA": null,
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  {
+    "UserAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1",
+    "SecCHUA": null,
+    "SecCHUAMobile": "?1",
+    "SecCHUAPlatform": '"iOS"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
   }
 ];
 
-// TAMAMEN İZOLE KAYIT SİSTEMİ - HER İŞLEM BAĞIMSIZ
+// TAMAMEN İZOLE KAYIT SİSTEMİ
 function createIsolatedRegistration() {
   const instance = {};
   
-  // HER INSTANCE TAMAMEN BAĞIMSIZ - İŞLEM BAŞINDA TEMİZ STATE
+  // HER INSTANCE TAMAMEN BAĞIMSIZ - İŞLEM BAŞINDA TEMİZ
   instance.cookies = new Map();
   instance.requestId = Math.random().toString(36).substring(2, 15);
   instance.isActive = true;
   instance.startTime = Date.now();
-  instance.sessionFingerprint = null;
-  instance.currentXsrfToken = null;
 
   // INSTANCE TEMİZLEME FONKSİYONU
   instance.cleanup = function() {
@@ -70,32 +202,31 @@ function createIsolatedRegistration() {
     
     debugLog(`🧹 [${instance.requestId}] Instance temizleniyor...`);
     
-    // Tüm state'i temizle
+    // Tüm cookie'leri temizle
     instance.cookies.clear();
-    instance.sessionFingerprint = null;
-    instance.currentXsrfToken = null;
+    
+    // Diğer referansları null yap
+    instance.cookies = new Map();
     instance.isActive = false;
     
     const duration = Date.now() - instance.startTime;
-    debugLog(`✅ [${instance.requestId}] Instance tamamen temizlendi (${duration}ms)`);
+    debugLog(`✅ [${instance.requestId}] Instance temizlendi (${duration}ms)`);
   };
   __name(instance.cleanup, "cleanup");
 
-  // İŞLEM BAŞI TAM TEMİZLİK
+  // İŞLEM BAŞI TEMİZLİK
   instance.initializeCleanState = function() {
     debugLog(`🆕 [${instance.requestId}] Yeni temiz instance oluşturuldu`);
     
-    // Önceki state'i tamamen temizle
+    // Önceki state'i temizle
     instance.cookies.clear();
-    instance.sessionFingerprint = null;
-    instance.currentXsrfToken = null;
     instance.isActive = true;
     instance.startTime = Date.now();
     
-    // Yeni session fingerprint oluştur
-    instance.sessionFingerprint = instance.generateFingerprint();
+    // Yeni bir cookie map oluştur
+    instance.cookies = new Map();
     
-    debugLog(`✨ [${instance.requestId}] Başlangıç temizliği tamamlandı - Yeni fingerprint: ${instance.sessionFingerprint}`);
+    debugLog(`✨ [${instance.requestId}] Başlangıç temizliği tamamlandı`);
   };
   __name(instance.initializeCleanState, "initializeCleanState");
 
@@ -138,7 +269,7 @@ function createIsolatedRegistration() {
   };
   __name(instance.extractExpiration, "extractExpiration");
 
-  // OTOMATİK COOKIE YÜKLEME - HER İŞLEM İÇİN YENİ
+  // OTOMATİK COOKIE YÜKLEME
   instance.loadInitialCookies = async function() {
     if (!instance.isActive) return false;
     
@@ -300,38 +431,19 @@ function createIsolatedRegistration() {
   };
   __name(instance.updateCookiesFromResponse, "updateCookiesFromResponse");
 
-  // FINGERPRINT OLUŞTURMA - HER INSTANCE İÇİN YENİ
-  instance.generateFingerprint = function() {
-    if (!instance.isActive) return 'inactive-instance';
-    
-    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c == 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-    
-    const timestamp = Date.now().toString(36);
-    const randomPart = Math.random().toString(36).substring(2, 8);
-    
-    return `${uuid}-${timestamp}-${randomPart}`;
-  };
-  __name(instance.generateFingerprint, "generateFingerprint");
-
-  // RANDOM HEADER GENERATOR - SESSION FINGERPRINT İLE
+  // RANDOM HEADER GENERATOR
   instance.getRandomHeaders = function() {
     if (!instance.isActive) return HEADER_SETS[0];
     
     const baseSet = HEADER_SETS[Math.floor(Math.random() * HEADER_SETS.length)];
-    
-    // Session fingerprint kullan
-    const fingerprint = instance.sessionFingerprint || instance.generateFingerprint();
+    const fingerprint = instance.getFingerprint();
     
     const headers = {
       ...baseSet,
       fingerprint: fingerprint
     };
     
-    debugLog(`🎭 [${instance.requestId}] Header set seçildi - Fingerprint: ${fingerprint}`);
+    debugLog(`🎭 [${instance.requestId}] Header set seçildi`);
     return headers;
   };
   __name(instance.getRandomHeaders, "getRandomHeaders");
@@ -347,6 +459,20 @@ function createIsolatedRegistration() {
     return `${username}.${random1}@${random2}.${domain}`;
   };
   __name(instance.getFormattedEmail, "getFormattedEmail");
+
+  // FINGERPRINT OLUŞTURMA
+  instance.getFingerprint = function() {
+    if (!instance.isActive) return 'inactive-instance';
+    
+    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+    debugLog(`🆕 [${instance.requestId}] Fingerprint oluşturuldu`);
+    return uuid;
+  };
+  __name(instance.getFingerprint, "getFingerprint");
 
   // RASTGELE TÜRK İSMİ
   instance.getRandomTurkishName = function() {
@@ -366,7 +492,7 @@ function createIsolatedRegistration() {
   };
   __name(instance.delay, "delay");
 
-  // XSRF TOKEN ALMA - INSTANCE BAZLI
+  // XSRF TOKEN ALMA
   instance.getXsrfToken = async function(selectedHeaders) {
     if (!instance.isActive) return null;
     
@@ -414,8 +540,7 @@ function createIsolatedRegistration() {
           const responseData = await response.json();
           if (responseData && responseData.token) {
             xsrfToken = responseData.token;
-            instance.currentXsrfToken = xsrfToken; // Instance state'de sakla
-            debugLog(`✅ [${instance.requestId}] XSRF Token alındı: ${xsrfToken.substring(0, 10)}...`);
+            debugLog(`✅ [${instance.requestId}] XSRF Token alındı`);
           }
         } catch (e) {
           debugLog(`❌ [${instance.requestId}] XSRF JSON parse hatası`);
@@ -427,8 +552,7 @@ function createIsolatedRegistration() {
         const xsrfMatch = setCookieHeader.match(/XSRF-TOKEN=([^;]+)/);
         if (xsrfMatch) {
           xsrfToken = decodeURIComponent(xsrfMatch[1]);
-          instance.currentXsrfToken = xsrfToken; // Instance state'de sakla
-          debugLog(`✅ [${instance.requestId}] XSRF Token header'dan alındı: ${xsrfToken.substring(0, 10)}...`);
+          debugLog(`✅ [${instance.requestId}] XSRF Token header'dan alındı`);
         }
       }
       
@@ -465,9 +589,9 @@ function createIsolatedRegistration() {
       }
       
       if (otpCode) {
-        debugLog(`🔢 [${instance.requestId}] OTP Kodu Bulundu: ${otpCode}`);
+        debugLog(`🔢 [${instance.requestId}] OTP Kodu Bulundu`);
       } else {
-        debugLog(`❌ [${instance.requestId}] OTP kodu bulunamadı - Response: ${otpResponse.substring(0, 100)}`);
+        debugLog(`❌ [${instance.requestId}] OTP kodu bulunamadı`);
       }
       
       return otpCode;
@@ -478,7 +602,7 @@ function createIsolatedRegistration() {
   };
   __name(instance.getOtpCode, "getOtpCode");
 
-  // POST REQUEST - TAM İZOLE
+  // POST REQUEST
   instance.makePostRequest = async function(url, body, xsrfToken, selectedHeaders, requestName = "POST") {
     if (!instance.isActive) {
       return { success: false, error: "Instance inactive" };
@@ -486,8 +610,7 @@ function createIsolatedRegistration() {
     
     debugLog(`🎯 [${instance.requestId}] ${requestName} isteği: ${url}`);
     
-    // Her request için instance fingerprint kullan
-    const currentFingerprint = instance.sessionFingerprint;
+    const currentFingerprint = selectedHeaders.fingerprint || instance.getFingerprint();
     
     const headers = {
       "accept": selectedHeaders.Accept,
@@ -556,7 +679,7 @@ function createIsolatedRegistration() {
     console.log(`🚀 [${instance.requestId}] TAM İZOLE KAYIT BAŞLATILIYOR - EMAIL:`, email);
     
     try {
-      // İŞLEM BAŞI TAM TEMİZLİK
+      // İŞLEM BAŞI TEMİZLİK
       instance.initializeCleanState();
       
       debugLog(`\n🔧 [${instance.requestId}] 1. ADIM: Başlangıç cookie'leri yükleniyor...`);
@@ -603,7 +726,7 @@ function createIsolatedRegistration() {
         throw new Error("OTP kodu alınamadı");
       }
       
-      debugLog(`✅ [${instance.requestId}] OTP KODU HAZIR: ${otpCode}`);
+      debugLog(`✅ [${instance.requestId}] OTP KODU HAZIR`);
       
       debugLog(`\n🔧 [${instance.requestId}] 6. ADIM: 2. POST için XSRF Token alınıyor...`);
       let xsrfToken2 = await instance.getXsrfToken(selectedHeaders);
@@ -643,7 +766,7 @@ function createIsolatedRegistration() {
       const lastName = instance.getRandomTurkishName();
       const password = "Hepsiburada1";
       
-      debugLog(`🎭 [${instance.requestId}] Kullanıcı bilgileri hazır: ${firstName} ${lastName}`);
+      debugLog(`🎭 [${instance.requestId}] Kullanıcı bilgileri hazır`);
       
       const postBody3 = {
         subscribeEmail: true,
@@ -665,9 +788,6 @@ function createIsolatedRegistration() {
       
       if (result3.success && result3.data?.success) {
         console.log(`🎉 🎉 🎉 [${instance.requestId}] KAYIT BAŞARILI! 🎉 🎉 🎉`);
-        console.log(`📧 Email: ${email}`);
-        console.log(`🔐 Password: ${password}`);
-        console.log(`👤 Name: ${firstName} ${lastName}`);
         
         return {
           success: true,
@@ -676,8 +796,7 @@ function createIsolatedRegistration() {
           name: `${firstName} ${lastName}`,
           accessToken: result3.data.data.accessToken,
           refreshToken: result3.data.data.refreshToken,
-          requestId: instance.requestId,
-          fingerprint: instance.sessionFingerprint
+          requestId: instance.requestId
         };
       } else {
         console.log(`❌ [${instance.requestId}] KAYIT BAŞARISIZ!`);
@@ -698,7 +817,7 @@ function createIsolatedRegistration() {
         requestId: instance.requestId
       };
     } finally {
-      // İŞLEM SONU TAM TEMİZLİK
+      // İŞLEM SONU TEMİZLİK
       instance.cleanup();
     }
   };
@@ -708,7 +827,7 @@ function createIsolatedRegistration() {
 }
 __name(createIsolatedRegistration, "createIsolatedRegistration");
 
-// WORKER - HER İSTEK İÇİN YENİ TAM İZOLE INSTANCE
+// WORKER - HER İSTEK İÇİN YENİ İZOLE INSTANCE
 var worker_default = {
   async fetch(request, env, ctx) {
     debugLog("📥 Yeni request:", request.method, request.url);
@@ -733,7 +852,6 @@ var worker_default = {
         const email = url.searchParams.get("email") || registration.getFormattedEmail();
         
         console.log("🎯 Yeni tam izole kayıt başlatılıyor:", email);
-        console.log("🔧 Instance ID:", registration.requestId);
         
         const result = await registration.startRegistration(email);
         
@@ -769,8 +887,7 @@ var worker_default = {
         return new Response(JSON.stringify({
           success: true,
           message: "Cookie testi tamamlandı",
-          cookieCount: registration.cookies.size,
-          requestId: registration.requestId
+          cookieCount: registration.cookies.size
         }, null, 2), {
           headers: { 
             "Content-Type": "application/json", 
@@ -780,8 +897,7 @@ var worker_default = {
       } catch (error) {
         return new Response(JSON.stringify({
           success: false,
-          error: error.message,
-          requestId: registration.requestId
+          error: error.message
         }, null, 2), {
           status: 500,
           headers: { 

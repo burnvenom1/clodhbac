@@ -306,7 +306,110 @@ function createIsolatedRegistration() {
   };
   __name2(instance.waitForOtp, "waitForOtp");
 
- instance.getXsrfToken = async function
+instance.getXsrfToken = async function(selectedHeaders, forceRefresh = false) {
+  debugLog(`🔄 [${instance.requestId}] XSRF Token alınıyor...`);
+  
+  // DEBUG: Mevcut cookie'leri kontrol et
+  const currentXsrfCookie = instance.cookies.get('XSRF-TOKEN');
+  debugLog(`🍪 MEVCUT XSRF COOKIE: ${currentXsrfCookie ? currentXsrfCookie.value.substring(0, 30) + '...' : 'YOK'}`);
+  
+  const xsrfUrl = "https://oauth.hepsiburada.com/api/authenticate/xsrf-token";
+  
+  const headers = {
+    "accept": selectedHeaders.Accept,
+    "accept-language": selectedHeaders.AcceptLanguage,
+    "accept-encoding": selectedHeaders.AcceptEncoding,
+    "cache-control": selectedHeaders.CacheControl,
+    "connection": selectedHeaders.Connection,
+    "origin": "https://giris.hepsiburada.com",
+    "referer": "https://giris.hepsiburada.com/",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-site",
+    "user-agent": selectedHeaders.UserAgent
+  };
+  
+  const cookieHeader = instance.getCookieHeaderForDomain(xsrfUrl);
+  if (cookieHeader) {
+    headers["cookie"] = cookieHeader;
+    debugLog(`📨 GÖNDERİLEN COOKIE SAYISI: ${cookieHeader.split(';').length}`);
+  }
+  
+  if (selectedHeaders.SecCHUA) {
+    headers["sec-ch-ua"] = selectedHeaders.SecCHUA;
+    headers["sec-ch-ua-mobile"] = selectedHeaders.SecCHUAMobile;
+    headers["sec-ch-ua-platform"] = selectedHeaders.SecCHUAPlatform;
+  }
+  
+  try {
+    const response = await fetch(xsrfUrl, { 
+      method: 'GET',
+      headers 
+    });
+    
+    debugLog(`📡 [${instance.requestId}] XSRF Response Status: ${response.status}`);
+    
+    // DEBUG: Set-Cookie header'ını kontrol et
+    const setCookieHeader = response.headers.get("set-cookie");
+    if (setCookieHeader) {
+      debugLog(`🎯 GELEN SET-COOKIE: ${setCookieHeader}`);
+      // XSRF-TOKEN'i extract et
+      const xsrfMatch = setCookieHeader.match(/XSRF-TOKEN=([^;]+)/);
+      if (xsrfMatch) {
+        const incomingXsrf = decodeURIComponent(xsrfMatch[1]);
+        debugLog(`🆕 GELEN XSRF-TOKEN: ${incomingXsrf.substring(0, 30)}...`);
+      }
+    }
+    
+    // 1. ÖNCE Cookie'leri güncelle
+    instance.updateCookiesFromResponse(response, xsrfUrl);
+    
+    // DEBUG: Güncellenmiş cookie'yi kontrol et
+    const updatedXsrfCookie = instance.cookies.get('XSRF-TOKEN');
+    debugLog(`🔄 GÜNCELLENMİŞ XSRF COOKIE: ${updatedXsrfCookie ? updatedXsrfCookie.value.substring(0, 30) + '...' : 'YOK'}`);
+    
+    let xsrfToken = null;
+    
+    // 2. JSON'dan token al
+    if (response.ok) {
+      try {
+        const responseData = await response.json();
+        if (responseData && responseData.token) {
+          xsrfToken = responseData.token;
+          debugLog(`✅ JSON'DAN XSRF TOKEN: ${xsrfToken.substring(0, 30)}...`);
+          
+          // DEBUG: JSON token ile cookie token karşılaştır
+          if (updatedXsrfCookie && xsrfToken !== updatedXsrfCookie.value) {
+            debugLog(`🚨 UYUŞMAZLIK: JSON token ≠ Cookie token`);
+          }
+        }
+      } catch (e) {
+        debugLog(`❌ [${instance.requestId}] XSRF JSON parse hatası`);
+      }
+    }
+    
+    // 3. Cookie'den token al (JSON yoksa)
+    if (!xsrfToken) {
+      if (updatedXsrfCookie) {
+        xsrfToken = updatedXsrfCookie.value;
+        debugLog(`🍪 COOKIE'DEN XSRF TOKEN: ${xsrfToken.substring(0, 30)}...`);
+      }
+    }
+    
+    // DEBUG: Son durum
+    debugLog(`🎯 DÖNECEK XSRF TOKEN: ${xsrfToken ? xsrfToken.substring(0, 30) + '...' : 'NULL'}`);
+    debugLog(`🍪 COOKIE'DEKİ XSRF TOKEN: ${updatedXsrfCookie ? updatedXsrfCookie.value.substring(0, 30) + '...' : 'NULL'}`);
+    
+    if (!xsrfToken) {
+      debugLog(`❌ [${instance.requestId}] XSRF Token bulunamadı`);
+    }
+    
+    return xsrfToken;
+  } catch (error) {
+    errorLog(`❌ [${instance.requestId}] XSRF Token hatası:`, error.message);
+    return null;
+  }
+};
   __name(instance.getXsrfToken, "getXsrfToken");
 
   instance.getOtpCode = async function(email) {

@@ -283,27 +283,23 @@ function createIsolatedRegistration() {
   };
   __name2(instance.delay, "delay");
 
-  instance.waitForOtp = async function(email, maxWaitTime = 45000, checkInterval = 3000) {
-    debugLog(`📱 [${instance.requestId}] OTP bekleniyor (${maxWaitTime}ms)...`);
-    const startTime = Date.now();
-    let attempt = 0;
-    
-    while (Date.now() - startTime < maxWaitTime) {
-      attempt++;
-      const otpCode = await instance.getOtpCode(email);
-      
-      if (otpCode) {
-        debugLog(`✅ [${instance.requestId}] OTP ${attempt}. denemede bulundu: ${otpCode}`);
-        return otpCode;
-      }
-      
-      debugLog(`⏳ [${instance.requestId}] OTP henüz yok (${attempt}. deneme), ${checkInterval}ms sonra tekrar...`);
-      await instance.delay(checkInterval);
-    }
-    
-    errorLog(`❌ [${instance.requestId}] OTP zaman aşımı (${maxWaitTime}ms)`);
+instance.waitForOtp = async function(email, maxWaitTime = 15000, checkInterval = 15000) {
+  debugLog(`📱 [${instance.requestId}] OTP bekleniyor (${maxWaitTime}ms sonra 1 kez kontrol)...`);
+  
+  // Önce bekle
+  await instance.delay(maxWaitTime);
+  
+  // Sonra 1 kere kontrol et
+  const otpCode = await instance.getOtpCode(email);
+  
+  if (otpCode) {
+    debugLog(`✅ [${instance.requestId}] OTP bulundu: ${otpCode}`);
+    return otpCode;
+  } else {
+    debugLog(`❌ [${instance.requestId}] OTP bulunamadı`);
     return null;
-  };
+  }
+};
   __name2(instance.waitForOtp, "waitForOtp");
 
 instance.getXsrfToken = async function(selectedHeaders, forceRefresh = false) {

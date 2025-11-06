@@ -306,91 +306,81 @@ function createIsolatedRegistration() {
   };
   __name2(instance.waitForOtp, "waitForOtp");
 
-  instance.getXsrfToken = async function(selectedHeaders, forceRefresh = false) {
-    debugLog(`🔄 [${instance.requestId}] XSRF Token alınıyor (forceRefresh: ${forceRefresh})...`);
-    
-    if (forceRefresh) {
-      const hadAntiforgery = instance.cookies.has('.AspNetCore.Antiforgery');
-      if (hadAntiforgery) {
-        instance.cookies.delete('.AspNetCore.Antiforgery');
-        debugLog(`🗑️ [${instance.requestId}] Eski Antiforgery cookie silindi`);
-      }
-    }
-    
-    const xsrfUrl = "https://oauth.hepsiburada.com/api/authenticate/xsrf-token";
-    
-    const headers = {
-      "accept": selectedHeaders.Accept,
-      "accept-language": selectedHeaders.AcceptLanguage,
-      "accept-encoding": selectedHeaders.AcceptEncoding,
-      "cache-control": selectedHeaders.CacheControl,
-      "connection": selectedHeaders.Connection,
-      "origin": "https://giris.hepsiburada.com",
-      "referer": "https://giris.hepsiburada.com/",
-      "sec-fetch-dest": "empty",
-      "sec-fetch-mode": "cors",
-      "sec-fetch-site": "same-site",
-      "user-agent": selectedHeaders.UserAgent
-    };
-    
-    const cookieHeader = instance.getCookieHeaderForDomain(xsrfUrl);
-    if (cookieHeader) headers["cookie"] = cookieHeader;
-    
-    if (selectedHeaders.SecCHUA) {
-      headers["sec-ch-ua"] = selectedHeaders.SecCHUA;
-      headers["sec-ch-ua-mobile"] = selectedHeaders.SecCHUAMobile;
-      headers["sec-ch-ua-platform"] = selectedHeaders.SecCHUAPlatform;
-    }
-    
-    try {
-      const response = await fetch(xsrfUrl, { 
-        method: 'GET',
-        headers 
-      });
-      
-      debugLog(`📡 [${instance.requestId}] XSRF Response Status: ${response.status}`);
-      instance.updateCookiesFromResponse(response, xsrfUrl);
-      
-      const newAntiforgery = instance.cookies.get('.AspNetCore.Antiforgery');
-      if (newAntiforgery) {
-        debugLog(`✅ [${instance.requestId}] Yeni Antiforgery alındı`);
-      }
-      
-      let xsrfToken = null;
-      
-      if (response.ok) {
-        try {
-          const responseData = await response.json();
-          if (responseData && responseData.token) {
-            xsrfToken = responseData.token;
-            debugLog(`✅ [${instance.requestId}] XSRF Token JSON'dan alındı`);
-          }
-        } catch (e) {
-          debugLog(`❌ [${instance.requestId}] XSRF JSON parse hatası:`, e.message);
-        }
-      }
-      
-      const setCookieHeader = response.headers.get("set-cookie");
-      if (setCookieHeader && !xsrfToken) {
-        const xsrfMatch = setCookieHeader.match(/XSRF-TOKEN=([^;]+)/);
-        if (xsrfMatch) {
-          xsrfToken = decodeURIComponent(xsrfMatch[1]);
-          debugLog(`✅ [${instance.requestId}] XSRF Token header'dan alındı`);
-        }
-      }
-      
-      if (!xsrfToken) {
-        debugLog(`❌ [${instance.requestId}] XSRF Token bulunamadı`);
-      } else {
-        debugLog(`🔑 [${instance.requestId}] XSRF Token: ${xsrfToken.substring(0, 20)}...`);
-      }
-      
-      return xsrfToken;
-    } catch (error) {
-      errorLog(`❌ [${instance.requestId}] XSRF Token hatası:`, error.message);
-      return null;
-    }
+ instance.getXsrfToken = async function(selectedHeaders, forceRefresh = false) {
+  debugLog(`🔄 [${instance.requestId}] XSRF Token alınıyor...`);
+  
+  const xsrfUrl = "https://oauth.hepsiburada.com/api/authenticate/xsrf-token";
+  
+  const headers = {
+    "accept": selectedHeaders.Accept,
+    "accept-language": selectedHeaders.AcceptLanguage,
+    "accept-encoding": selectedHeaders.AcceptEncoding,
+    "cache-control": selectedHeaders.CacheControl,
+    "connection": selectedHeaders.Connection,
+    "origin": "https://giris.hepsiburada.com",
+    "referer": "https://giris.hepsiburada.com/",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-site",
+    "user-agent": selectedHeaders.UserAgent
   };
+  
+  const cookieHeader = instance.getCookieHeaderForDomain(xsrfUrl);
+  if (cookieHeader) headers["cookie"] = cookieHeader;
+  
+  if (selectedHeaders.SecCHUA) {
+    headers["sec-ch-ua"] = selectedHeaders.SecCHUA;
+    headers["sec-ch-ua-mobile"] = selectedHeaders.SecCHUAMobile;
+    headers["sec-ch-ua-platform"] = selectedHeaders.SecCHUAPlatform;
+  }
+  
+  try {
+    const response = await fetch(xsrfUrl, { 
+      method: 'GET',
+      headers 
+    });
+    
+    debugLog(`📡 [${instance.requestId}] XSRF Response Status: ${response.status}`);
+    
+    // 1. ÖNCE Cookie'leri güncelle
+    instance.updateCookiesFromResponse(response, xsrfUrl);
+    
+    let xsrfToken = null;
+    
+    // 2. JSON'dan token al
+    if (response.ok) {
+      try {
+        const responseData = await response.json();
+        if (responseData && responseData.token) {
+          xsrfToken = responseData.token;
+          debugLog(`✅ [${instance.requestId}] XSRF Token JSON'dan alındı`);
+        }
+      } catch (e) {
+        debugLog(`❌ [${instance.requestId}] XSRF JSON parse hatası`);
+      }
+    }
+    
+    // 3. Cookie'den token al (JSON yoksa veya güvenilir değilse)
+    if (!xsrfToken) {
+      const cookieToken = instance.cookies.get('XSRF-TOKEN');
+      if (cookieToken) {
+        xsrfToken = cookieToken.value;
+        debugLog(`🍪 [${instance.requestId}] XSRF Token cookie'den alındı`);
+      }
+    }
+    
+    if (!xsrfToken) {
+      debugLog(`❌ [${instance.requestId}] XSRF Token bulunamadı`);
+    } else {
+      debugLog(`🎯 [${instance.requestId}] XSRF Token: ${xsrfToken.substring(0, 30)}...`);
+    }
+    
+    return xsrfToken;
+  } catch (error) {
+    errorLog(`❌ [${instance.requestId}] XSRF Token hatası:`, error.message);
+    return null;
+  }
+};
   __name(instance.getXsrfToken, "getXsrfToken");
 
   instance.getOtpCode = async function(email) {

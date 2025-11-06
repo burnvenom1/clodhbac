@@ -14,7 +14,7 @@ var EMAIL_LIST = [
   "nqywhdnoh@emlhub.com"
 ];
 var COOKIE_API_URL = "https://burnrndr.onrender.com/last-cookies";
-var DEBUG_MODE = true; // Debug modu açık
+var DEBUG_MODE = true;
 
 function debugLog(...args) {
   if (DEBUG_MODE) console.log(...args);
@@ -53,14 +53,11 @@ var HEADER_SETS = [
   }
 ];
 
-function createIsolatedRegistration(baseEmail = null) {
+function createIsolatedRegistration() {
   const instance = {};
   instance.cookies = /* @__PURE__ */ new Map();
   instance.requestId = Math.random().toString(36).substring(2, 15);
-  instance._fingerprint = null; // Fingerprint'i instance seviyesinde sakla
-  
-  // Email'i instance seviyesinde sakla
-  instance.email = baseEmail || instance.getFormattedEmail();
+  instance._fingerprint = null;
   
   instance.extractAttribute = function(attributes, attrName) {
     const attr = attributes.find((a) => a.toLowerCase().startsWith(attrName.toLowerCase() + "="));
@@ -239,7 +236,6 @@ function createIsolatedRegistration(baseEmail = null) {
   instance.getRandomHeaders = function() {
     const baseSet = HEADER_SETS[Math.floor(Math.random() * HEADER_SETS.length)];
     
-    // Fingerprint'i instance seviyesinde sakla (sadece bir kere oluştur)
     if (!instance._fingerprint) {
       instance._fingerprint = instance.getFingerprint();
       debugLog(`🆔 [${instance.requestId}] Yeni fingerprint oluşturuldu: ${instance._fingerprint.substring(0, 8)}...`);
@@ -255,14 +251,13 @@ function createIsolatedRegistration(baseEmail = null) {
   };
   __name2(instance.getRandomHeaders, "getRandomHeaders");
 
+  // ORİJİNAL EMAIL FORMATI
   instance.getFormattedEmail = function() {
     const baseEmail = EMAIL_LIST[Math.floor(Math.random() * EMAIL_LIST.length)];
     const [username, domain] = baseEmail.split("@");
-    const randomSuffix = Math.random().toString(36).substring(2, 8); // 6 karakter
-    const email = `${username}+${randomSuffix}@${domain}`; // ✅ AYNI DOMAIN KALIYOR
-    
-    debugLog(`📧 [${instance.requestId}] Yeni email oluşturuldu: ${email}`);
-    return email;
+    const random1 = Math.random().toString(36).substring(2, 5);
+    const random2 = Math.random().toString(36).substring(2, 5);
+    return `${username}.${random1}@${random2}.${domain}`;
   };
   __name2(instance.getFormattedEmail, "getFormattedEmail");
 
@@ -288,7 +283,6 @@ function createIsolatedRegistration(baseEmail = null) {
   };
   __name2(instance.delay, "delay");
 
-  // GELİŞMİŞ OTP BEKLEME FONKSİYONU
   instance.waitForOtp = async function(email, maxWaitTime = 45000, checkInterval = 3000) {
     debugLog(`📱 [${instance.requestId}] OTP bekleniyor (${maxWaitTime}ms)...`);
     const startTime = Date.now();
@@ -312,11 +306,9 @@ function createIsolatedRegistration(baseEmail = null) {
   };
   __name2(instance.waitForOtp, "waitForOtp");
 
-  // GÜNCELLENMİŞ XSRF TOKEN ALMA
   instance.getXsrfToken = async function(selectedHeaders, forceRefresh = false) {
     debugLog(`🔄 [${instance.requestId}] XSRF Token alınıyor (forceRefresh: ${forceRefresh})...`);
     
-    // Sadece ilk çağrıda veya forceRefresh true ise antiforgery'yi temizle
     if (forceRefresh) {
       const hadAntiforgery = instance.cookies.has('.AspNetCore.Antiforgery');
       if (hadAntiforgery) {
@@ -359,7 +351,6 @@ function createIsolatedRegistration(baseEmail = null) {
       debugLog(`📡 [${instance.requestId}] XSRF Response Status: ${response.status}`);
       instance.updateCookiesFromResponse(response, xsrfUrl);
       
-      // Yeni antiforgery kontrolü
       const newAntiforgery = instance.cookies.get('.AspNetCore.Antiforgery');
       if (newAntiforgery) {
         debugLog(`✅ [${instance.requestId}] Yeni Antiforgery alındı`);
@@ -379,7 +370,6 @@ function createIsolatedRegistration(baseEmail = null) {
         }
       }
       
-      // Header'dan da kontrol et
       const setCookieHeader = response.headers.get("set-cookie");
       if (setCookieHeader && !xsrfToken) {
         const xsrfMatch = setCookieHeader.match(/XSRF-TOKEN=([^;]+)/);
@@ -433,7 +423,6 @@ function createIsolatedRegistration(baseEmail = null) {
   };
   __name2(instance.getOtpCode, "getOtpCode");
 
-  // API SONUÇ KONTROL FONKSİYONU
   instance.handleApiResult = function(result, stepName) {
     if (!result.success) {
       throw new Error(`${stepName} başarısız: ${result.error || "Bilinmeyen hata"}`);
@@ -449,7 +438,6 @@ function createIsolatedRegistration(baseEmail = null) {
     debugLog(`🚀 [${instance.requestId}] ${requestName} isteği: ${url}`);
     debugLog(`📧 [${instance.requestId}] Gönderilen email: ${body.email}`);
     
-    // Fingerprint tutarlılığı - header'dakini kullan
     const currentFingerprint = selectedHeaders.fingerprint;
     
     const headers = {
@@ -481,7 +469,6 @@ function createIsolatedRegistration(baseEmail = null) {
     
     if (xsrfToken) headers["x-xsrf-token"] = xsrfToken;
     
-    // Debug için header bilgisi
     if (DEBUG_MODE) {
       debugLog(`📋 [${instance.requestId}] ${requestName} Headers:`, {
         hasCookies: !!cookieHeader,
@@ -530,14 +517,11 @@ function createIsolatedRegistration(baseEmail = null) {
   };
   __name2(instance.makePostRequest, "makePostRequest");
 
-  instance.startRegistration = async function() {
-    const email = instance.email; // Instance seviyesindeki email'i kullan
-    
+  instance.startRegistration = async function(email) {
     console.log(`🚀 [${instance.requestId}] KAYIT BAŞLATILIYOR - EMAIL: ${email}`);
     console.log(`🆔 [${instance.requestId}] Fingerprint: ${instance._fingerprint ? instance._fingerprint.substring(0, 8) + '...' : 'Henüz yok'}`);
     
     try {
-      // 1. ADIM: Cookie'ler
       debugLog(`\n📋 [${instance.requestId}] 1. ADIM: Cookie'ler yükleniyor...`);
       const cookieSuccess = await instance.getFreshCookies();
       if (!cookieSuccess) {
@@ -546,17 +530,15 @@ function createIsolatedRegistration(baseEmail = null) {
 
       const selectedHeaders = instance.getRandomHeaders();
 
-      // 2. ADIM: XSRF Token (İlk çağrı - forceRefresh true)
       debugLog(`\n📋 [${instance.requestId}] 2. ADIM: XSRF Token alınıyor...`);
       let xsrfToken1 = await instance.getXsrfToken(selectedHeaders, true);
       if (!xsrfToken1) {
         throw new Error("1. XSRF Token alınamadı");
       }
 
-      // 3. ADIM: Üyelik isteği
       debugLog(`\n📋 [${instance.requestId}] 3. ADIM: Üyelik isteği gönderiliyor...`);
       const postBody1 = {
-        email: email, // Açıkça belirt
+        email: email,
         returnUrl: "https://oauth.hepsiburada.com/connect/authorize/callback?client_id=SPA&redirect_uri=https%3A%2F%2Fwww.hepsiburada.com%2Fuyelik%2Fcallback&response_type=code&scope=openid%20profile&state=c7ca3f6c28c5445aa5c1f4d52ce65d6d&code_challenge=t44-iDRkzoBssUdCS9dHN3YZBks8RTWlxV-BpC4Jbos&code_challenge_method=S256&response_mode=query"
       };
       
@@ -571,14 +553,12 @@ function createIsolatedRegistration(baseEmail = null) {
       const result1Data = instance.handleApiResult(result1, "1. POST - Üyelik İsteği");
       debugLog(`✅ [${instance.requestId}] 1. POST BAŞARILI - ReferenceId: ${result1Data.data?.referenceId}`);
 
-      // 4. ADIM: OTP Bekleme
       debugLog(`\n📋 [${instance.requestId}] 4. ADIM: OTP bekleniyor...`);
       const otpCode = await instance.waitForOtp(email, 45000, 3000);
       if (!otpCode) {
         throw new Error("OTP kodu alınamadı");
       }
 
-      // 5. ADIM: 2. POST için XSRF Token (forceRefresh false)
       debugLog(`\n📋 [${instance.requestId}] 5. ADIM: 2. POST için XSRF Token alınıyor...`);
       let xsrfToken2 = await instance.getXsrfToken(selectedHeaders, false);
       if (!xsrfToken2) {
@@ -601,11 +581,9 @@ function createIsolatedRegistration(baseEmail = null) {
       const result2Data = instance.handleApiResult(result2, "2. POST - OTP Doğrulama");
       debugLog(`✅ [${instance.requestId}] 2. POST BAŞARILI - RequestId: ${result2Data.requestId}`);
 
-      // 6. ADIM: Kısa bekleme
       debugLog(`\n📋 [${instance.requestId}] 6. ADIM: Kayıt öncesi bekleniyor...`);
       await instance.delay(3000);
 
-      // 7. ADIM: 3. POST için XSRF Token (forceRefresh false)
       debugLog(`\n📋 [${instance.requestId}] 7. ADIM: 3. POST için XSRF Token alınıyor...`);
       let xsrfToken3 = await instance.getXsrfToken(selectedHeaders, false);
       if (!xsrfToken3) {
@@ -680,35 +658,20 @@ __name2(createIsolatedRegistration, "createIsolatedRegistration");
 async function startParallelRegistrations(count, baseEmail = null) {
   console.log(`🎯 ${count} paralel kayıt başlatılıyor...`);
   const promises = [];
-  const usedEmails = new Set();
   
   for (let i = 0; i < count; i++) {
+    const registration = createIsolatedRegistration();
     let email;
     
     if (baseEmail) {
       const [username, domain] = baseEmail.split("@");
-      let uniqueEmail;
-      let attempts = 0;
-      
-      // Benzersiz email oluştur
-      do {
-        const timestamp = Date.now().toString(36).slice(-4);
-        const random = Math.random().toString(36).substring(2, 6);
-        uniqueEmail = `${username}+${timestamp}${random}${i}@${domain}`;
-        attempts++;
-      } while (usedEmails.has(uniqueEmail) && attempts < 10);
-      
-      usedEmails.add(uniqueEmail);
-      email = uniqueEmail;
+      email = `${username}+${i}@${domain}`; // ORİJİNAL FORMAT
     } else {
-      // Rastgele email oluştur
-      const tempInstance = createIsolatedRegistration();
-      email = tempInstance.getFormattedEmail();
+      email = registration.getFormattedEmail(); // ORİJİNAL FONKSİYON
     }
     
-    const registration = createIsolatedRegistration(email);
     console.log(`🎯 Instance ${i+1} için email: ${email}`);
-    promises.push(registration.startRegistration());
+    promises.push(registration.startRegistration(email));
   }
   
   const results = await Promise.allSettled(promises);
@@ -760,11 +723,13 @@ var worker_default = {
     
     if (url.pathname === "/register") {
       try {
-        const email = url.searchParams.get("email");
-        const registration = createIsolatedRegistration(email);
-        console.log("🎯 Yeni kayıt başlatılıyor:", registration.email);
+        const emailParam = url.searchParams.get("email");
+        const registration = createIsolatedRegistration();
+        const email = emailParam || registration.getFormattedEmail();
         
-        const result = await registration.startRegistration();
+        console.log("🎯 Yeni kayıt başlatılıyor:", email);
+        
+        const result = await registration.startRegistration(email);
         return new Response(JSON.stringify(result, null, 2), {
           headers: {
             "Content-Type": "application/json",
@@ -866,7 +831,7 @@ var worker_default = {
         "/test-cookies": "Cookie testi"
       },
       notes: [
-        "✅ Email formatı düzeltildi",
+        "✅ Orijinal email formatı korundu",
         "✅ Fingerprint tutarlılığı sağlandı", 
         "✅ XSRF token yönetimi iyileştirildi",
         "✅ OTP bekleme geliştirildi",

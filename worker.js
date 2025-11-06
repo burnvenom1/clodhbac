@@ -13,7 +13,7 @@ var EMAIL_LIST = [
 ];
 
 const COOKIE_API_URL = "https://burnrndr.onrender.com/last-cookies";
-const DEBUG_MODE = false;
+const DEBUG_MODE = true; // ✅ DEBUG AÇIK
 
 // OPTİMİZE LOG FONKSİYONLARI
 function debugLog(...args) {
@@ -56,11 +56,18 @@ var HEADER_SETS = [
 function createIsolatedRegistration() {
   const instance = {};
   
-  // HER INSTANCE TAMAMEN BAĞIMSIZ - İŞLEM BAŞINDA TEMİZ
+  // HER INSTANCE TAMAMEN BAĞIMSIZ
   instance.cookies = new Map();
   instance.requestId = Math.random().toString(36).substring(2, 15);
   instance.isActive = true;
   instance.startTime = Date.now();
+
+  // ✅ INSTANCE'A ÖZEL CACHE SİSTEMİ
+  instance.localCache = {
+    cookies: null,
+    cacheTime: 0,
+    rotationIndex: Math.floor(Math.random() * 100) // Random başlangıç
+  };
 
   // INSTANCE TEMİZLEME FONKSİYONU
   instance.cleanup = function() {
@@ -68,11 +75,7 @@ function createIsolatedRegistration() {
     
     debugLog(`🧹 [${instance.requestId}] Instance temizleniyor...`);
     
-    // Tüm cookie'leri temizle
     instance.cookies.clear();
-    
-    // Diğer referansları null yap
-    instance.cookies = new Map();
     instance.isActive = false;
     
     const duration = Date.now() - instance.startTime;
@@ -84,13 +87,9 @@ function createIsolatedRegistration() {
   instance.initializeCleanState = function() {
     debugLog(`🆕 [${instance.requestId}] Yeni temiz instance oluşturuldu`);
     
-    // Önceki state'i temizle
     instance.cookies.clear();
     instance.isActive = true;
     instance.startTime = Date.now();
-    
-    // Yeni bir cookie map oluştur
-    instance.cookies = new Map();
     
     debugLog(`✨ [${instance.requestId}] Başlangıç temizliği tamamlandı`);
   };
@@ -135,14 +134,20 @@ function createIsolatedRegistration() {
   };
   __name(instance.extractExpiration, "extractExpiration");
 
-  // OTOMATİK COOKIE YÜKLEME
+  // ✅ GÜNCELLENMİŞ COOKIE YÜKLEME - INSTANCE CACHE İLE
   instance.loadInitialCookies = async function() {
     if (!instance.isActive) return false;
     
     debugLog(`👤 [${instance.requestId}] Başlangıç cookie'leri yükleniyor...`);
     
     try {
-      // Önce mevcut cookie'leri temizle
+      // ✅ INSTANCE ÖZEL CACHE KONTROLÜ
+      if (instance.localCache.cookies && Date.now() - instance.localCache.cacheTime < 10000) {
+        instance.cookies = new Map(instance.localCache.cookies);
+        debugLog(`♻️ [${instance.requestId}] Önbellekten cookie'ler yüklendi`);
+        return true;
+      }
+      
       instance.cookies.clear();
       
       const response = await fetch(COOKIE_API_URL);
@@ -157,9 +162,13 @@ function createIsolatedRegistration() {
         
         if (setKeys.length === 0) throw new Error("Cookie set bulunamadı");
         
-        const randomSetKey = setKeys[Math.floor(Math.random() * setKeys.length)];
-        cookiesArray = cookieData[randomSetKey];
-        debugLog(`🎲 [${instance.requestId}] Seçilen cookie set: ${randomSetKey}`);
+        // ✅ INSTANCE'A ÖZEL ROTATION
+        const selectedSet = setKeys[instance.localCache.rotationIndex % setKeys.length];
+        cookiesArray = cookieData[selectedSet];
+        
+        instance.localCache.rotationIndex = (instance.localCache.rotationIndex + 1) % setKeys.length;
+        
+        debugLog(`🎲 [${instance.requestId}] Seçilen cookie set: ${selectedSet} (Index: ${instance.localCache.rotationIndex})`);
       } 
       else if (Array.isArray(cookieData)) {
         cookiesArray = cookieData;
@@ -168,7 +177,6 @@ function createIsolatedRegistration() {
         throw new Error(`API formatı beklenmiyor: ${typeof cookieData}`);
       }
       
-      // Yeni cookie'leri yükle
       cookiesArray.forEach(cookie => {
         if (cookie.name && cookie.value && instance.isActive) {
           instance.cookies.set(cookie.name, {
@@ -180,9 +188,12 @@ function createIsolatedRegistration() {
             sameSite: cookie.sameSite || 'Lax',
             expirationDate: cookie.expires || cookie.expirationDate
           });
-          debugLog(`✅ [${instance.requestId}] ${cookie.name} yüklendi`);
         }
       });
+      
+      // ✅ INSTANCE CACHE'INI GÜNCELLE
+      instance.localCache.cookies = new Map(instance.cookies);
+      instance.localCache.cacheTime = Date.now();
       
       debugLog(`🎯 [${instance.requestId}] ${instance.cookies.size} cookie yüklendi`);
       return true;
@@ -228,17 +239,14 @@ function createIsolatedRegistration() {
     
     const cookieDomain = cookieData.domain;
     
-    // 1. EXACT MATCH: "hepsiburada.com" == "hepsiburada.com"
     if (cookieDomain === targetDomain) {
       return true;
     }
     
-    // 2. SUBDOMAIN MATCH: ".hepsiburada.com" → "oauth.hepsiburada.com"
     if (cookieDomain.startsWith('.') && targetDomain.endsWith(cookieDomain)) {
       return true;
     }
     
-    // 3. PARENT DOMAIN MATCH: "hepsiburada.com" → "oauth.hepsiburada.com"
     if (targetDomain.endsWith('.' + cookieDomain)) {
       return true;
     }
@@ -540,18 +548,17 @@ function createIsolatedRegistration() {
   };
   __name(instance.makePostRequest, "makePostRequest");
 
-  // ANA KAYIT FONKSİYONU - TAMAMEN İZOLE
+  // ✅ OPTİMİZE EDİLMİŞ KAYIT FONKSİYONU
   instance.startRegistration = async function(email) {
-    console.log(`🚀 [${instance.requestId}] TAM İZOLE KAYIT BAŞLATILIYOR - EMAIL:`, email);
+    console.log(`🚀 [${instance.requestId}] PARALEL KAYIT BAŞLATILIYOR - EMAIL:`, email);
     
     try {
-      // İŞLEM BAŞI TEMİZLİK
       instance.initializeCleanState();
       
-      debugLog(`\n🔧 [${instance.requestId}] 1. ADIM: Başlangıç cookie'leri yükleniyor...`);
+      debugLog(`\n🔧 [${instance.requestId}] 1. ADIM: Cookie'ler yükleniyor...`);
       const cookieSuccess = await instance.loadInitialCookies();
       if (!cookieSuccess) {
-        throw new Error("Başlangıç cookie'leri alınamadı");
+        throw new Error("Cookie'ler alınamadı");
       }
       
       const selectedHeaders = instance.getRandomHeaders();
@@ -683,7 +690,6 @@ function createIsolatedRegistration() {
         requestId: instance.requestId
       };
     } finally {
-      // İŞLEM SONU TEMİZLİK
       instance.cleanup();
     }
   };
@@ -693,7 +699,7 @@ function createIsolatedRegistration() {
 }
 __name(createIsolatedRegistration, "createIsolatedRegistration");
 
-// WORKER - HER İSTEK İÇİN YENİ İZOLE INSTANCE
+// ✅ OPTİMİZE EDİLMİŞ WORKER
 var worker_default = {
   async fetch(request, env, ctx) {
     debugLog("📥 Yeni request:", request.method, request.url);
@@ -711,13 +717,13 @@ var worker_default = {
     const url = new URL(request.url);
     
     if (url.pathname === "/register") {
-      // HER İSTEK İÇİN YENİ TAM İZOLE INSTANCE
+      // ✅ HER İSTEK TAMAMEN BAĞIMSIZ
       const registration = createIsolatedRegistration();
       
       try {
         const email = url.searchParams.get("email") || registration.getFormattedEmail();
         
-        console.log("🎯 Yeni tam izole kayıt başlatılıyor:", email);
+        console.log("🎯 Yeni paralel kayıt başlatılıyor:", email);
         
         const result = await registration.startRegistration(email);
         
@@ -743,42 +749,38 @@ var worker_default = {
       }
     }
     
-    if (url.pathname === "/test-cookies") {
-      // TEST İÇİN DE YENİ INSTANCE
+    // ✅ YENİ DEBUG ENDPOINT'LERİ
+    if (url.pathname === "/debug-cookies") {
       const registration = createIsolatedRegistration();
+      await registration.loadInitialCookies();
       
-      try {
-        await registration.loadInitialCookies();
-        
-        return new Response(JSON.stringify({
-          success: true,
-          message: "Cookie testi tamamlandı",
-          cookieCount: registration.cookies.size
-        }, null, 2), {
-          headers: { 
-            "Content-Type": "application/json", 
-            ...corsHeaders 
-          }
-        });
-      } catch (error) {
-        return new Response(JSON.stringify({
-          success: false,
-          error: error.message
-        }, null, 2), {
-          status: 500,
-          headers: { 
-            "Content-Type": "application/json", 
-            ...corsHeaders 
-          }
-        });
-      }
+      const cookies = Array.from(registration.cookies.entries()).map(([name, data]) => ({
+        name,
+        value: data.value.substring(0, 15) + '...',
+        domain: data.domain
+      }));
+      
+      return new Response(JSON.stringify({
+        requestId: registration.requestId,
+        cookieCount: cookies.length,
+        cookies: cookies
+      }, null, 2), { headers: corsHeaders });
+    }
+    
+    if (url.pathname === "/health") {
+      return new Response(JSON.stringify({
+        status: "OK",
+        timestamp: new Date().toISOString(),
+        debug: DEBUG_MODE
+      }, null, 2), { headers: corsHeaders });
     }
     
     return new Response(JSON.stringify({
-      message: "Hepsiburada Kayıt API - Tam İzole Versiyon",
+      message: "Hepsiburada Kayıt API - Paralel Versiyon",
       endpoints: {
-        "/register": "Tam izole kayıt başlat",
-        "/test-cookies": "Cookie testi"
+        "/register": "Paralel kayıt başlat",
+        "/debug-cookies": "Cookie debug",
+        "/health": "Health check"
       }
     }, null, 2), {
       headers: { 

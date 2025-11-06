@@ -544,7 +544,7 @@ function createIsolatedRegistration() {
       debugLog(`✅ [${instance.requestId}] 1. POST BAŞARILI - ReferenceId: ${result1Data.data?.referenceId}`);
 
       debugLog(`\n📋 [${instance.requestId}] 4. ADIM: OTP bekleniyor...`);
-      const otpCode = await instance.waitForOtp(email, 45000, 3000);
+      const otpCode = await instance.waitForOtp(email, 15000, 15000);
       if (!otpCode) {
         throw new Error("OTP kodu alınamadı");
       }

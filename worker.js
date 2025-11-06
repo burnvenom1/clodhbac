@@ -3,85 +3,21 @@ var __name = (target, value) => __defProp(target, "name", { value, configurable:
 
 // worker.js
 var EMAIL_LIST = [
-   "jihpngpnd@emlhub.com",
+  "jihpngpnd@emlhub.com",
   "tmrzfanje@emlpro.com", 
   "wiraypzse@emlpro.com",
   "lnmwhbvvf@emltmp.com",
   "bshuzcvvf@emltmp.com",
   "hsfsqxcug@emltmp.com",
-  "nqywhdnoh@emlhub.com",
-  "048370crsm@freeml.net",
-  "04837v1h98@freeml.net",
-  "04838e039m@freeml.net",
-  "04839mk808@freeml.net",
-  "0483aa1zj4@freeml.net",
-  "jy1c7eh2@mailpwr.com",
-  "jy1kb68h@mailpwr.com",
-  "jz6qk02m@mailpwr.com",
-  "jz6ta9hn@mailpwr.com",
-  "jz72a572@mailpwr.com",
-  "jz74ndyw@mailpwr.com",
-  "jz76sw1m@mailpwr.com",
-  "manunasodun3@mimimail.me",
-  "manun1kinyz3@mimimail.me",
-  "manupefovuz3@mimimail.me",
-  "manup0lutuj2@mimimail.me",
-  "manusyk1taw2@mimimail.me",
-  "manutinajyl3@mimimail.me",
-  "manut0sepem3@mimimail.me",
-  "lozydozajid2@10mail.xyz",
-  "hiwemubadom2@10mail.xyz",
-  "mobeliv1myn3@10mail.xyz",
-  "mymib0sejyz2@10mail.xyz",
-  "bohel1meken3@10mail.xyz",
-  "b0togovojev2@10mail.xyz",
-  "guv1s0f0tak2@10mail.xyz",
-  "ahmcemzni@10mail.org",
-  "ahmcffaeh@10mail.org",
-  "ahmcfwpfd@10mail.org",
-  "ahmcgaohd@10mail.org",
-  "ahmcgiwye@10mail.org",
-  "ahmcgoyfv@10mail.org",
-  "ahmchfabm@10mail.org",
-  "ahbzmfiun@yomail.info",
-  "ahbzmxpoh@yomail.info",
-  "ahbznddyb@yomail.info",
-  "ahbznefnq@yomail.info",
-  "ahbzognth@yomail.info",
-  "ahbzoofgb@yomail.info",
-  "ahbzoznkl@yomail.info",
-  "jwjavzvej@emltmp.com",
-  "iycfyzvej@emltmp.com",
-  "aymjdawej@emltmp.com",
-  "hcfuhawej@emltmp.com",
-  "ztotqawej@emltmp.com",
-  "bekxwawej@emltmp.com",
-  "axhbbbwej@emltmp.com",
-  "rhhzbqmgi@emlpro.com",
-  "vcfdhqmgi@emlpro.com",
-  "utcpmqmgi@emlpro.com",
-  "hqnjtqmgi@emlpro.com",
-  "qvkpyqmgi@emlpro.com",
-  "jdawermgi@emlpro.com",
-  "khhonrmgi@emlpro.com",
-  "qwxugbxai@emlhub.com",
-  "fejqjbxai@emlhub.com",
-  "fjkwmbxai@emlhub.com",
-  "tgyspbxai@emlhub.com",
-  "pzbesbxai@emlhub.com",
-  "qqkqubxai@emlhub.com",
-  "tnglxbxai@emlhub.com",
-  "04dndf7ps8@spymail.one",
-  "04dndhs6fc@spymail.one",
-  "04dndn5tw4@spymail.one",
-  "04dndsn43c@spymail.one",
-  "04dndz9z90@spymail.one",
-  "04dne23ncg@spymail.one",
-  "04dnebnewg@spymail.one"
+  "nqywhdnoh@emlhub.com"
 ];
 
 const COOKIE_API_URL = "https://burnrndr.onrender.com/last-cookies";
-const DEBUG_MODE = false;
+const DEBUG_MODE = true; // 👈 DEBUG AÇ
+
+// GLOBAL TASK STORAGE - SON 100 İŞLEM
+const recentTasks = [];
+const MAX_TASKS = 100;
 
 // OPTİMİZE LOG FONKSİYONLARI
 function debugLog(...args) {
@@ -112,72 +48,6 @@ var HEADER_SETS = [
     "SecCHUA": '"Chromium";v="119", "Google Chrome";v="119", "Not-A.Brand";v="8"',
     "SecCHUAMobile": "?0",
     "SecCHUAPlatform": '"Windows"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-    "AcceptEncoding": "gzip, deflate, br",
-    "CacheControl": "no-cache",
-    "Connection": "keep-alive"
-  },
-  {
-    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
-    "SecCHUA": '"Chromium";v="118", "Google Chrome";v="118", "Not-A.Brand";v="8"',
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"Windows"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-    "AcceptEncoding": "gzip, deflate, br",
-    "CacheControl": "no-cache",
-    "Connection": "keep-alive"
-  },
-  {
-    "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"macOS"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-    "AcceptEncoding": "gzip, deflate, br",
-    "CacheControl": "no-cache",
-    "Connection": "keep-alive"
-  },
-  {
-    "UserAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"Linux"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-    "AcceptEncoding": "gzip, deflate, br",
-    "CacheControl": "no-cache",
-    "Connection": "keep-alive"
-  },
-  {
-    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
-    "SecCHUA": null,
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"Windows"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-    "AcceptEncoding": "gzip, deflate, br",
-    "CacheControl": "no-cache",
-    "Connection": "keep-alive"
-  },
-  {
-    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0",
-    "SecCHUA": null,
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"Windows"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-    "AcceptEncoding": "gzip, deflate, br",
-    "CacheControl": "no-cache",
-    "Connection": "keep-alive"
-  },
-  {
-    "UserAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1",
-    "SecCHUA": null,
-    "SecCHUAMobile": "?1",
-    "SecCHUAPlatform": '"iOS"',
     "Accept": "application/json, text/plain, */*",
     "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
     "AcceptEncoding": "gzip, deflate, br",
@@ -827,10 +697,10 @@ function createIsolatedRegistration() {
 }
 __name(createIsolatedRegistration, "createIsolatedRegistration");
 
-// WORKER - HER İSTEK İÇİN YENİ İZOLE INSTANCE
+// WORKER - SEÇENEK 1 + SON 100 İŞLEM
 var worker_default = {
   async fetch(request, env, ctx) {
-    debugLog("📥 Yeni request:", request.method, request.url);
+    console.log("📥 Yeni request:", request.method, request.url);
     
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
@@ -844,41 +714,88 @@ var worker_default = {
     
     const url = new URL(request.url);
     
+    // 🎯 SEÇENEK 1: Hızlı Response + Background Processing
     if (url.pathname === "/register") {
-      // HER İSTEK İÇİN YENİ TAM İZOLE INSTANCE
       const registration = createIsolatedRegistration();
+      const email = url.searchParams.get("email") || registration.getFormattedEmail();
       
-      try {
-        const email = url.searchParams.get("email") || registration.getFormattedEmail();
-        
-        console.log("🎯 Yeni tam izole kayıt başlatılıyor:", email);
-        
-        const result = await registration.startRegistration(email);
-        
-        return new Response(JSON.stringify(result, null, 2), {
-          headers: { 
-            "Content-Type": "application/json", 
-            ...corsHeaders 
-          }
-        });
-      } catch (error) {
-        errorLog("💥 API hatası:", error.message);
-        
-        return new Response(JSON.stringify({
-          success: false,
-          error: error.message
-        }, null, 2), {
-          status: 500,
-          headers: { 
-            "Content-Type": "application/json", 
-            ...corsHeaders 
-          }
-        });
+      console.log(`🎯 PARALEL KAYIT BAŞLATILIYOR - Instance: ${registration.requestId}, Email: ${email}`);
+      
+      // 👇 TASK'I KAYDET (BAŞLANGIÇ)
+      const task = {
+        id: registration.requestId,
+        email: email,
+        status: "processing",
+        startTime: new Date().toISOString(),
+        endTime: null,
+        result: null,
+        error: null
+      };
+      
+      recentTasks.unshift(task);
+      // 👇 SON 100'Ü KORU
+      if (recentTasks.length > MAX_TASKS) {
+        recentTasks.splice(MAX_TASKS);
       }
+      
+      // 👇 ARKA PLANDA ÇALIŞTIR (await YOK!)
+      ctx.waitUntil((async () => {
+        try {
+          const result = await registration.startRegistration(email);
+          
+          // 👇 TASK'I GÜNCELLE (SONUÇ)
+          task.status = result.success ? "completed" : "failed";
+          task.endTime = new Date().toISOString();
+          task.result = result;
+          
+          console.log(`✅ ARKA PLAN SONUÇ - Instance: ${registration.requestId}, Success: ${result.success}`);
+        } catch (error) {
+          // 👇 TASK'I GÜNCELLE (HATA)
+          task.status = "error";
+          task.endTime = new Date().toISOString();
+          task.error = error.message;
+          
+          console.log(`💥 ARKA PLAN HATA - Instance: ${registration.requestId}, Error: ${error.message}`);
+        }
+      })());
+      
+      // 👇 HEMEN RESPONSE DÖN
+      return new Response(JSON.stringify({
+        success: true,
+        message: "Kayıt başlatıldı",
+        instanceId: registration.requestId,
+        email: email,
+        status: "processing",
+        viewResults: "/recent-tasks"
+      }, null, 2), {
+        headers: { 
+          "Content-Type": "application/json", 
+          ...corsHeaders 
+        }
+      });
     }
     
+    // 📊 SON 100 İŞLEM ENDPOINT'İ
+    if (url.pathname === "/recent-tasks") {
+      const stats = {
+        total: recentTasks.length,
+        processing: recentTasks.filter(t => t.status === "processing").length,
+        completed: recentTasks.filter(t => t.status === "completed").length,
+        failed: recentTasks.filter(t => t.status === "failed").length,
+        error: recentTasks.filter(t => t.status === "error").length,
+        tasks: recentTasks
+      };
+      
+      return new Response(JSON.stringify(stats, null, 2), {
+        headers: { 
+          "Content-Type": "application/json", 
+          ...corsHeaders 
+        }
+      });
+    }
+    
+    // 🧪 TEST COOKIES
     if (url.pathname === "/test-cookies") {
-      // TEST İÇİN DE YENİ INSTANCE
       const registration = createIsolatedRegistration();
       
       try {
@@ -908,10 +825,12 @@ var worker_default = {
       }
     }
     
+    // 📋 ANA SAYFA
     return new Response(JSON.stringify({
-      message: "Hepsiburada Kayıt API - Tam İzole Versiyon",
+      message: "Hepsiburada Kayıt API - Seçenek 1 + Son 100 İşlem",
       endpoints: {
-        "/register": "Tam izole kayıt başlat",
+        "/register": "Paralel kayıt başlat (hemen response)",
+        "/recent-tasks": "Son 100 işlemi görüntüle", 
         "/test-cookies": "Cookie testi"
       }
     }, null, 2), {

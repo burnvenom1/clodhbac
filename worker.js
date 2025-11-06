@@ -174,31 +174,29 @@ function createIsolatedRegistration() {
   };
   __name(instance.getCookieHeaderForDomain, "getCookieHeaderForDomain");
 
-  // COOKIE GÖNDERME KURALLARI - DÜZELTİLMİŞ
+  // COOKIE GÖNDERME KURALLARI
   instance.shouldSendCookie = function(cookieData, targetDomain, targetUrl) {
     if (!cookieData.domain) {
-      debugLog(`   🔓 [${instance.requestId}] Domain yok - gönder: ${targetDomain}`);
       return true;
     }
     
-    const cookieDomain = cookieData.domain.replace(/^\./, '');
-    const cleanTargetDomain = targetDomain.replace(/^\./, '');
-    
-    debugLog(`   🔍 [${instance.requestId}] Domain kontrol: cookie="${cookieDomain}" target="${cleanTargetDomain}"`);
+    const cookieDomain = cookieData.domain;
     
     // 1. EXACT MATCH: "hepsiburada.com" == "hepsiburada.com"
-    if (cookieDomain === cleanTargetDomain) {
-      debugLog(`   ✅ [${instance.requestId}] Exact match`);
+    if (cookieDomain === targetDomain) {
       return true;
     }
     
-    // 2. SUBDOMAIN MATCH: "oauth.hepsiburada.com" → "hepsiburada.com"
-    if (cleanTargetDomain.endsWith('.' + cookieDomain)) {
-      debugLog(`   ✅ [${instance.requestId}] Subdomain match: ${cleanTargetDomain} endsWith .${cookieDomain}`);
+    // 2. SUBDOMAIN MATCH: ".hepsiburada.com" → "oauth.hepsiburada.com"
+    if (cookieDomain.startsWith('.') && targetDomain.endsWith(cookieDomain)) {
       return true;
     }
     
-    debugLog(`   ❌ [${instance.requestId}] Domain uyumsuz`);
+    // 3. PARENT DOMAIN MATCH: "hepsiburada.com" → "oauth.hepsiburada.com"
+    if (targetDomain.endsWith('.' + cookieDomain)) {
+      return true;
+    }
+    
     return false;
   };
   __name(instance.shouldSendCookie, "shouldSendCookie");

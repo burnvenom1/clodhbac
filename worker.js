@@ -2,27 +2,21 @@ var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
 // worker.js
-var EMAIL_LIST = [
-  "jihpngpnd@emlhub.com",
-  "tmrzfanje@emlpro.com", 
-  "wiraypzse@emlpro.com",
-  "lnmwhbvvf@emltmp.com",
-  "bshuzcvvf@emltmp.com",
-  "hsfsqxcug@emltmp.com",
-  "nqywhdnoh@emlhub.com"
-];
-
 const COOKIE_API_URL = "https://burnrndr.onrender.com/last-cookies";
 const DEBUG_MODE = true;
 
-// COOKIE YÖNETİCİSİ - TAMAMEN ID BAZLI
+// COOKIE YÖNETİCİSİ - LOCK SİSTEMLİ
 var cookieManager = {
   cachedCookieSets: {},
   lastFetchTime: 0,
+  instanceCounter: 0,
+  isRefreshing: false,
+  refreshPromise: null,
   
   async getCookieSetForInstance(instanceId) {
+    // ✅ LOCK: Aynı anda sadece bir refresh işlemi
     if (Object.keys(this.cachedCookieSets).length === 0 || Date.now() - this.lastFetchTime > 300000) {
-      await this.refreshCookies();
+      await this.refreshCookiesWithLock();
     }
     
     const setKeys = Object.keys(this.cachedCookieSets);
@@ -30,7 +24,7 @@ var cookieManager = {
       throw new Error("Cookie set bulunamadı");
     }
     
-    // ✅ INSTANCE HASH İLE SABİT SEÇİM - AYNI ID HER ZAMAN AYNI SET
+    // ✅ INSTANCE ID İLE SABİT SEÇİM
     const instanceHash = this.hashString(instanceId);
     const setIndex = instanceHash % setKeys.length;
     const selectedSetKey = setKeys[setIndex];
@@ -38,21 +32,30 @@ var cookieManager = {
     
     console.log(`🎲 [${instanceId}] Cookie Set: ${selectedSetKey}, Hash Index: ${setIndex}, Adet: ${selectedSet.length}`);
     
-    // ✅ DEEP COPY - ESKİ DATA KULLANILMASIN
+    // ✅ DEEP COPY
     return JSON.parse(JSON.stringify(selectedSet));
   },
   
-  hashString(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
+  async refreshCookiesWithLock() {
+    // ✅ LOCK kontrolü - aynı anda sadece bir refresh
+    if (this.isRefreshing) {
+      console.log("🔒 Cookie refresh bekleniyor...");
+      await this.refreshPromise;
+      return;
     }
-    return Math.abs(hash);
+    
+    this.isRefreshing = true;
+    this.refreshPromise = this._doRefresh();
+    
+    try {
+      await this.refreshPromise;
+    } finally {
+      this.isRefreshing = false;
+      this.refreshPromise = null;
+    }
   },
   
-  async refreshCookies() {
+  async _doRefresh() {
     console.log("🔄 Cookie setleri yenileniyor...");
     
     try {
@@ -79,6 +82,16 @@ var cookieManager = {
     }
   },
   
+  hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  },
+  
   getStatus() {
     const setKeys = Object.keys(this.cachedCookieSets);
     
@@ -94,7 +107,7 @@ var cookieManager = {
   }
 };
 
-// TASK YÖNETİCİSİ - ID BAZLI
+// TASK YÖNETİCİSİ - THREAD-SAFE
 const taskManager = {
   tasks: new Map(),
   maxTasks: 100,
@@ -149,7 +162,7 @@ const taskManager = {
   }
 };
 
-// OPTİMİZE LOG FONKSİYONLARI - ID BAZLI
+// OPTİMİZE LOG FONKSİYONLARI - INSTANCE ID'Lİ
 function debugLog(instanceId, ...args) {
   if (DEBUG_MODE) console.log(`[${instanceId}]`, ...args);
 }
@@ -173,11 +186,25 @@ var HEADER_SETS = [
   }
 ];
 
-// TAM İZOLE INSTANCE SİSTEMİ - EMAIL VE OTP KARIŞMASI TAMAMEN ÖNLENDİ
+// GLOBAL EMAIL LIST - SADECE TEMPLATE
+const GLOBAL_EMAIL_TEMPLATES = [
+  "jihpngpnd@emlhub.com",
+  "tmrzfanje@emlpro.com", 
+  "wiraypzse@emlpro.com",
+  "lnmwhbvvf@emltmp.com",
+  "bshuzcvvf@emltmp.com",
+  "hsfsqxcug@emltmp.com",
+  "nqywhdnoh@emlhub.com"
+];
+
+// TAM İZOLE INSTANCE SİSTEMİ - TÜM FONKSİYONLAR INSTANCE ID'Lİ
 function createIsolatedInstance(instanceId) {
-  console.log(`🆕 [${instanceId}] YENİ INSTANCE OLUŞTURULUYOR - EMAIL/OTP KARIŞMASI YOK`);
+  console.log(`🆕 [${instanceId}] YENİ INSTANCE OLUŞTURULUYOR - TAM İZOLE`);
   
-  // ✅ HER ŞEYİ SIFIRDAN OLUŞTUR - ÖNCEKİ VERİLERİ ASLA KULLANMA
+  // ✅ INSTANCE BAŞINA ÖZEL EMAIL LİSTESİ
+  const INSTANCE_EMAIL_LIST = [...GLOBAL_EMAIL_TEMPLATES];
+  
+  // ✅ HER ŞEYİ SIFIRDAN OLUŞTUR
   const instanceData = {
     // ✅ COOKIE SİSTEMİ - YENİ MAP
     cookies: new Map(),
@@ -185,14 +212,15 @@ function createIsolatedInstance(instanceId) {
     // ✅ HEADER SİSTEMİ - YENİ OLUŞTUR
     selectedHeaders: null,
     
-    // ✅ EMAIL SİSTEMİ - HER DEFASINDA YENİ (KARIŞMA YOK)
+    // ✅ EMAIL SİSTEMİ - INSTANCE'A ÖZEL LİSTE
+    emailList: INSTANCE_EMAIL_LIST,
     email: null,
     emailGenerated: false,
     
-    // ✅ OTP SİSTEMİ - YENİ (KARIŞMA YOK)
+    // ✅ OTP SİSTEMİ - YENİ
     otpCode: null,
     otpRetrieved: false,
-    otpEmail: null, // 🎯 EMAIL-OTP EŞLEŞTİRME: Hangi email için OTP alındığını kaydeder
+    otpEmail: null,
     
     // ✅ REFERENCE ID SİSTEMİ - YENİ
     referenceId: null,
@@ -224,7 +252,7 @@ function createIsolatedInstance(instanceId) {
       cookiesLoaded: false,
       xsrf1Received: false,
       post1Completed: false,
-      otpRequested: false, // 🎯 OTP İSTENDİ Mİ?
+      otpRequested: false,
       otpReceived: false,
       xsrf2Received: false,
       post2Completed: false,
@@ -239,38 +267,34 @@ function createIsolatedInstance(instanceId) {
     isActive: true,
     startTime: Date.now(),
     
-    // ✅ INSTANCE ÖZEL VERİLER - HER ZAMAN YENİ
+    // ✅ INSTANCE ÖZEL VERİLER
     instanceData: instanceData,
 
-    // ✅ TEMİZLİK FONKSİYONU - SADECE BU INSTANCE
+    // ✅ TEMİZLİK FONKSİYONU - INSTANCE ID'Lİ
     cleanup: function() {
       if (!this.isActive) return;
       const cookieCount = this.instanceData.cookies ? this.instanceData.cookies.size : 0;
-      debugLog(this.requestId, `🧹 Instance yok ediliyor - ${cookieCount} cookie temizlenecek...`);
+      debugLog(this.requestId, `🧹 [${this.requestId}] Instance yok ediliyor - ${cookieCount} cookie temizlenecek...`);
       
       this.isActive = false;
       if (this.instanceData.cookies) {
         this.instanceData.cookies.clear();
       }
-      // ✅ TÜM REFERANSLARI KOPAR - KARIŞMA OLMASIN
       this.instanceData = null;
       
-      debugLog(this.requestId, `✅ Instance tamamen yok edildi - veri karışması önlendi`);
+      debugLog(this.requestId, `✅ [${this.requestId}] Instance tamamen yok edildi`);
     },
     
-    // ✅ BAŞLANGIÇ TEMİZLİĞİ - ASLA ÖNCEKİ VERİLERİ KULLANMA
+    // ✅ BAŞLANGIÇ TEMİZLİĞİ - INSTANCE ID'Lİ
     initializeCleanState: function() {
-      debugLog(this.requestId, `✨ YENİ INSTANCE - Tüm veriler sıfırlanıyor (email/OTP karışması yok)...`);
+      debugLog(this.requestId, `✨ [${this.requestId}] YENİ INSTANCE - Tüm veriler sıfırlanıyor...`);
       
-      // ✅ COOKIE'LERİ TEMİZLE
       this.instanceData.cookies.clear();
-      
-      // ✅ TÜM VERİLERİ SIFIRLA - KARIŞMA OLMASIN
       this.instanceData.email = null;
       this.instanceData.emailGenerated = false;
       this.instanceData.otpCode = null;
       this.instanceData.otpRetrieved = false;
-      this.instanceData.otpEmail = null; // 🎯 OTP EMAIL'INI SIFIRLA
+      this.instanceData.otpEmail = null;
       this.instanceData.referenceId = null;
       this.instanceData.requestId = null;
       this.instanceData.xsrfTokens = { step1: null, step2: null, step3: null };
@@ -291,34 +315,40 @@ function createIsolatedInstance(instanceId) {
       this.isActive = true;
       this.startTime = Date.now();
       
-      debugLog(this.requestId, `✨ Instance tamamen temiz - email/OTP karışması yok`);
+      debugLog(this.requestId, `✨ [${this.requestId}] Instance tamamen temiz`);
     },
     
-    // ✅ HEADER OLUŞTURMA - HER ZAMAN YENİ
+    // ✅ HEADER OLUŞTURMA - INSTANCE ID'Lİ
     initializeHeaders: function() {
-      debugLog(this.requestId, `🎭 YENİ header set oluşturuluyor...`);
-      const baseHeaderSet = HEADER_SETS[this.hashString(this.requestId + Date.now()) % HEADER_SETS.length];
+      debugLog(this.requestId, `🎭 [${this.requestId}] YENİ header set oluşturuluyor...`);
+      const baseHeaderSet = HEADER_SETS[this.hashString(this.requestId + Date.now().toString()) % HEADER_SETS.length];
       this.instanceData.selectedHeaders = {
         ...baseHeaderSet,
         fingerprint: this.generateFingerprint()
       };
-      debugLog(this.requestId, `✅ Yeni header set oluşturuldu: ${this.instanceData.selectedHeaders.UserAgent.substring(0, 50)}...`);
+      debugLog(this.requestId, `✅ [${this.requestId}] Yeni header set oluşturuldu`);
     },
     
-    // ✅ FINGERPRINT OLUŞTURMA - HER ZAMAN YENİ
+    // ✅ FINGERPRINT ÜRETİCİ - INSTANCE ID'Lİ
     generateFingerprint: function() {
+      // ✅ INSTANCE ID + TIMESTAMP + RANDOM
       const seed = this.requestId + Date.now().toString() + Math.random().toString(36);
-      let fingerprint = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = this.hashString(seed + c) % 16 | 0;
-        const v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      }.bind(this));
+      const fingerprint = [...Array(36)]
+        .map((_, i) => {
+          if (i === 8 || i === 13 || i === 18 || i === 23) return '-';
+          if (i === 14) return '4';
+          if (i === 19) return ['8','9','a','b'][Math.floor(Math.random() * 4)];
+          // ✅ SEED'E GÖRE HASH
+          const charSeed = this.hashString(seed + i.toString());
+          return (charSeed % 16).toString(16);
+        })
+        .join('');
       
-      debugLog(this.requestId, `🔑 YENİ fingerprint oluşturuldu: ${fingerprint}`);
+      debugLog(this.requestId, `🔑 [${this.requestId}] Fingerprint: ${fingerprint}`);
       return fingerprint;
     },
     
-    // ✅ HASH FONKSİYONU
+    // ✅ HASH FONKSİYONU - INSTANCE ID'Lİ
     hashString: function(str) {
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
@@ -329,51 +359,52 @@ function createIsolatedInstance(instanceId) {
       return Math.abs(hash);
     },
     
-    // ✅ EMAIL OLUŞTURMA - HER ZAMAN YENİ VE FARKLI (KARIŞMA YOK)
+    // ✅ EMAIL OLUŞTURMA - INSTANCE ID'Lİ (DÜZELTİLMİŞ FORMAT)
     getFormattedEmail: function() {
-      debugLog(this.requestId, `📧 YENİ email oluşturuluyor...`);
+      debugLog(this.requestId, `📧 [${this.requestId}] YENİ email oluşturuluyor...`);
       
+      // ✅ INSTANCE ID KULLAN
       const timestamp = Date.now().toString(36);
       const randomPart = Math.random().toString(36).substring(2, 6);
-      const uniqueSeed = this.requestId + timestamp + randomPart;
-      const uniqueIndex = this.hashString(uniqueSeed) % EMAIL_LIST.length;
+      const instancePart = this.requestId.substring(this.requestId.length - 4);
       
-      const baseEmail = EMAIL_LIST[uniqueIndex];
+      // ✅ INSTANCE'A ÖZEL LİSTE
+      const randomIndex = Math.floor(Math.random() * this.instanceData.emailList.length);
+      const baseEmail = this.instanceData.emailList[randomIndex];
       const [username, domain] = baseEmail.split("@");
       
-      // ✅ ORJİNAL FORMAT: username.3harf@3harf.domain
-      const formattedEmail = `${username}.${timestamp.substring(0,3)}@${randomPart.substring(0,3)}.${domain}`;
+      // ✅ DÜZELTİLMİŞ FORMAT: username.12a@34h.domain (nokta kesin konuyor)
+      const formattedEmail = `${username}.${timestamp.substring(0,3)}${instancePart.substring(0,1)}@${randomPart.substring(0,3)}.${domain}`;
       
-      // ✅ EMAIL'I INSTANCE DATA'YA KAYDET - SADECE BU INSTANCE İÇİN
+      // ✅ KESİNLİKLE KAYDET
       this.instanceData.email = formattedEmail;
       this.instanceData.emailGenerated = true;
       
-      debugLog(this.requestId, `✅ YENİ UNIQUE email oluşturuldu: ${formattedEmail}`);
+      console.log(`✅ [${this.requestId}] YENİ UNIQUE EMAIL: ${formattedEmail}`);
       return formattedEmail;
     },
     
-    // ✅ RANDOM İSİM - HER ZAMAN YENİ
+    // ✅ RANDOM İSİM - INSTANCE ID'Lİ
     getRandomTurkishName: function() {
       const names = ["Ahmet", "Mehmet", "Mustafa", "Ali", "Ayşe", "Fatma", "Emine", "Hatice"];
+      // ✅ INSTANCE ID KULLAN
       const uniqueSeed = this.hashString(this.requestId + Date.now().toString() + Math.random().toString(36));
       const nameIndex = uniqueSeed % names.length;
       
       const name = names[nameIndex];
-      debugLog(this.requestId, `👤 YENİ rastgele isim: ${name}`);
+      debugLog(this.requestId, `👤 [${this.requestId}] YENİ rastgele isim: ${name}`);
       return name;
     },
     
-    // ✅ COOKIE YÜKLEME - HER ZAMAN YENİ
+    // ✅ COOKIE YÜKLEME - INSTANCE ID'Lİ
     loadInitialCookies: async function() {
       if (!this.isActive) return false;
       
-      debugLog(this.requestId, `👤 YENİ cookie set yükleniyor...`);
+      debugLog(this.requestId, `👤 [${this.requestId}] YENİ cookie set yükleniyor...`);
       
       try {
-        // ✅ ÖNCE COOKIE'LERİ TEMİZLE
         this.instanceData.cookies.clear();
         
-        // ✅ BU INSTANCE ID İLE YENİ COOKIE SETİ AL
         const cookieSet = await cookieManager.getCookieSetForInstance(this.requestId);
         
         if (!cookieSet || cookieSet.length === 0) {
@@ -383,7 +414,6 @@ function createIsolatedInstance(instanceId) {
         let loadedCount = 0;
         cookieSet.forEach(cookie => {
           if (cookie && cookie.name && cookie.value) {
-            // ✅ SADECE BU INSTANCE'IN COOKIE MAP'INE EKLE
             this.instanceData.cookies.set(cookie.name, {
               value: cookie.value,
               domain: cookie.domain,
@@ -399,24 +429,24 @@ function createIsolatedInstance(instanceId) {
         });
         
         this.instanceData.stepStatus.cookiesLoaded = true;
-        debugLog(this.requestId, `✅ ${loadedCount} YENİ cookie yüklendi (Sadece bu instance için)`);
+        debugLog(this.requestId, `✅ [${this.requestId}] ${loadedCount} YENİ cookie yüklendi`);
         
         if (DEBUG_MODE && loadedCount > 0) {
-          debugLog(this.requestId, `🔍 Yüklenen YENİ cookie'ler:`);
+          debugLog(this.requestId, `🔍 [${this.requestId}] Yüklenen YENİ cookie'ler:`);
           this.instanceData.cookies.forEach((cookie, name) => {
-            debugLog(this.requestId, `  ${name}=${cookie.value.substring(0, 15)}...`);
+            debugLog(this.requestId, `  [${this.requestId}] ${name}=${cookie.value.substring(0, 15)}...`);
           });
         }
         
         return loadedCount > 0;
         
       } catch (error) {
-        errorLog(this.requestId, `❌ Cookie hatası:`, error.message);
+        errorLog(this.requestId, `❌ [${this.requestId}] Cookie hatası:`, error.message);
         return false;
       }
     },
     
-    // ✅ COOKIE HEADER OLUŞTURMA - SADECE BU INSTANCE'IN COOKIELERI
+    // ✅ COOKIE HEADER OLUŞTURMA - INSTANCE ID'Lİ
     getCookieHeaderForDomain: function(targetUrl) {
       if (!this.isActive || !this.instanceData.cookies) return "";
       
@@ -433,17 +463,17 @@ function createIsolatedInstance(instanceId) {
         
         const header = cookies.join("; ");
         if (cookies.length > 0) {
-          debugLog(this.requestId, `🍪 ${cookies.length} cookie gönderiliyor: ${targetDomain}`);
+          debugLog(this.requestId, `🍪 [${this.requestId}] ${cookies.length} cookie gönderiliyor: ${targetDomain}`);
         }
         
         return header;
       } catch (error) {
-        errorLog(this.requestId, `❌ URL parse hatası:`, error.message);
+        errorLog(this.requestId, `❌ [${this.requestId}] URL parse hatası:`, error.message);
         return "";
       }
     },
     
-    // ✅ COOKIE GÖNDERME KURALLARI
+    // ✅ COOKIE GÖNDERME KURALLARI - INSTANCE ID'Lİ
     shouldSendCookie: function(cookieData, targetDomain, targetUrl) {
       if (!this.isActive) return false;
       if (!cookieData.domain) return true;
@@ -456,7 +486,7 @@ function createIsolatedInstance(instanceId) {
       return false;
     },
     
-    // ✅ COOKIE GÜNCELLEME - SADECE BU INSTANCE İÇİN
+    // ✅ COOKIE GÜNCELLEME - INSTANCE ID'Lİ
     updateCookiesFromResponse: function(response, requestUrl) {
       if (!this.isActive || !this.instanceData.cookies) return;
       
@@ -465,7 +495,7 @@ function createIsolatedInstance(instanceId) {
         return;
       }
       
-      debugLog(this.requestId, `📨 Set-Cookie Header alındı - instance cookie'leri güncelleniyor`);
+      debugLog(this.requestId, `📨 [${this.requestId}] Set-Cookie Header alındı - instance cookie'leri güncelleniyor`);
       const cookies = setCookieHeader.split(/,\s*(?=[^;]+=)/);
       
       let updatedCount = 0;
@@ -502,11 +532,11 @@ function createIsolatedInstance(instanceId) {
       });
       
       if (updatedCount > 0 || addedCount > 0) {
-        debugLog(this.requestId, `✅ ${updatedCount} cookie güncellendi, ${addedCount} yeni cookie eklendi`);
+        debugLog(this.requestId, `✅ [${this.requestId}] ${updatedCount} cookie güncellendi, ${addedCount} yeni cookie eklendi`);
       }
     },
     
-    // ✅ HELPER FONKSİYONLAR
+    // ✅ HELPER FONKSİYONLAR - INSTANCE ID'Lİ
     extractAttribute: function(attributes, attrName) {
       if (!this.isActive) return null;
       const attr = attributes.find(a => a.toLowerCase().startsWith(attrName.toLowerCase() + '='));
@@ -542,18 +572,18 @@ function createIsolatedInstance(instanceId) {
       return null;
     },
     
-    // ✅ DELAY FONKSİYONU
+    // ✅ DELAY FONKSİYONU - INSTANCE ID'Lİ
     delay: function(ms) {
       if (!this.isActive) return Promise.resolve();
-      debugLog(this.requestId, `⏳ ${ms}ms bekleniyor...`);
+      debugLog(this.requestId, `⏳ [${this.requestId}] ${ms}ms bekleniyor...`);
       return new Promise((resolve) => setTimeout(resolve, ms));
     },
     
-    // ✅ XSRF TOKEN ALMA - HER ZAMAN YENİ
+    // ✅ XSRF TOKEN ALMA - INSTANCE ID'Lİ
     getXsrfToken: async function(step = "step1") {
       if (!this.isActive) return null;
       
-      debugLog(this.requestId, `🔄 YENİ XSRF Token alınıyor (${step})...`);
+      debugLog(this.requestId, `🔄 [${this.requestId}] YENİ XSRF Token alınıyor (${step})...`);
       
       const xsrfUrl = "https://oauth.hepsiburada.com/api/authenticate/xsrf-token";
       
@@ -568,7 +598,8 @@ function createIsolatedInstance(instanceId) {
         "sec-fetch-dest": "empty",
         "sec-fetch-mode": "cors",
         "sec-fetch-site": "same-site",
-        "user-agent": this.instanceData.selectedHeaders.UserAgent
+        "user-agent": this.instanceData.selectedHeaders.UserAgent,
+        "fingerprint": this.instanceData.selectedHeaders.fingerprint,
       };
       
       const cookieHeader = this.getCookieHeaderForDomain(xsrfUrl);
@@ -586,7 +617,7 @@ function createIsolatedInstance(instanceId) {
           headers 
         });
         
-        debugLog(this.requestId, `📡 XSRF Response Status: ${response.status}`);
+        debugLog(this.requestId, `📡 [${this.requestId}] XSRF Response Status: ${response.status}`);
         this.updateCookiesFromResponse(response, xsrfUrl);
         
         let xsrfToken = null;
@@ -598,7 +629,7 @@ function createIsolatedInstance(instanceId) {
               xsrfToken = responseData.token;
             }
           } catch (e) {
-            debugLog(this.requestId, `❌ XSRF JSON parse hatası`);
+            debugLog(this.requestId, `❌ [${this.requestId}] XSRF JSON parse hatası`);
           }
         }
         
@@ -610,39 +641,36 @@ function createIsolatedInstance(instanceId) {
           }
         }
         
-        // ✅ TOKEN'İ INSTANCE DATA'YA KAYDET
         if (xsrfToken) {
           this.instanceData.xsrfTokens[step] = xsrfToken;
           this.instanceData.stepStatus[`${step.replace('step', 'xsrf')}Received`] = true;
-          debugLog(this.requestId, `✅ YENİ XSRF Token alındı (${step}): ${xsrfToken.substring(0, 20)}...`);
+          debugLog(this.requestId, `✅ [${this.requestId}] YENİ XSRF Token alındı (${step}): ${xsrfToken.substring(0, 20)}...`);
         } else {
-          debugLog(this.requestId, `❌ XSRF Token bulunamadı (${step})`);
+          debugLog(this.requestId, `❌ [${this.requestId}] XSRF Token bulunamadı (${step})`);
         }
         
         return xsrfToken;
       } catch (error) {
-        errorLog(this.requestId, `❌ XSRF Token hatası:`, error.message);
+        errorLog(this.requestId, `❌ [${this.requestId}] XSRF Token hatası:`, error.message);
         return null;
       }
     },
     
-    // ✅ OTP KODU ALMA - HER ZAMAN YENİ (KARIŞMA YOK)
+    // ✅ OTP KODU ALMA - INSTANCE ID'Lİ
     getOtpCode: async function() {
       if (!this.isActive) return null;
       
-      // 🎯 OTP DAHA ÖNCE ALINDI MI KONTROL ET
       if (this.instanceData.otpRetrieved && this.instanceData.otpCode) {
-        debugLog(this.requestId, `📱 Önceden alınmış OTP kullanılıyor: ${this.instanceData.otpCode} (Email: ${this.instanceData.email})`);
+        debugLog(this.requestId, `📱 [${this.requestId}] Önceden alınmış OTP kullanılıyor: ${this.instanceData.otpCode} (Email: ${this.instanceData.email})`);
         return this.instanceData.otpCode;
       }
       
-      // 🎯 EMAIL KONTROLÜ - BU INSTANCE'IN EMAIL'İ OLMALI
       if (!this.instanceData.email) {
-        errorLog(this.requestId, `❌ OTP hatası: Email bulunamadı`);
+        errorLog(this.requestId, `❌ [${this.requestId}] OTP hatası: Email bulunamadı`);
         return null;
       }
       
-      debugLog(this.requestId, `📱 YENİ OTP kodu alınıyor: ${this.instanceData.email}`);
+      debugLog(this.requestId, `📱 [${this.requestId}] YENİ OTP kodu alınıyor: ${this.instanceData.email}`);
       
       const otpUrl = `https://script.google.com/macros/s/AKfycbxvTJG2ou3TGgCv2PHaaFjw8-dpRkxwnuJuJHZ6CXAVCo7jRXvm_Je5c370uGundLo3KQ/exec?email=${encodeURIComponent(this.instanceData.email)}&mode=0`;
       
@@ -660,28 +688,26 @@ function createIsolatedInstance(instanceId) {
         }
         
         if (otpCode) {
-          // 🎯 OTP'Yİ INSTANCE DATA'YA KAYDET - SADECE BU INSTANCE İÇİN
           this.instanceData.otpCode = otpCode;
           this.instanceData.otpRetrieved = true;
-          this.instanceData.otpEmail = this.instanceData.email; // 🎯 HANGİ EMAIL İÇİN OTP ALINDIĞINI KAYDET
+          this.instanceData.otpEmail = this.instanceData.email;
           this.instanceData.stepStatus.otpReceived = true;
-          debugLog(this.requestId, `🔢 YENİ OTP Kodu Bulundu: ${otpCode} (Email: ${this.instanceData.email})`);
+          debugLog(this.requestId, `🔢 [${this.requestId}] YENİ OTP Kodu Bulundu: ${otpCode} (Email: ${this.instanceData.email})`);
         } else {
-          debugLog(this.requestId, `❌ OTP kodu bulunamadı (Email: ${this.instanceData.email})`);
+          debugLog(this.requestId, `❌ [${this.requestId}] OTP kodu bulunamadı (Email: ${this.instanceData.email})`);
         }
         
         return otpCode;
       } catch (error) {
-        errorLog(this.requestId, `❌ OTP Hatası:`, error.message);
+        errorLog(this.requestId, `❌ [${this.requestId}] OTP Hatası:`, error.message);
         return null;
       }
     },
     
-    // 🎯 OTP DOĞRULAMA POST'U - EMAIL VE OTP KONTROLÜ (KARIŞMA ÖNLEYİCİ)
+    // ✅ OTP DOĞRULAMA - INSTANCE ID'Lİ
     validateOtpWithEmailCheck: async function(xsrfToken) {
       if (!this.isActive) return { success: false, error: "Instance inactive" };
       
-      // 🎯 EMAIL VE OTP KONTROLÜ - KARIŞMA OLMASIN
       if (!this.instanceData.email) {
         return { success: false, error: "Email bulunamadı" };
       }
@@ -694,18 +720,16 @@ function createIsolatedInstance(instanceId) {
         return { success: false, error: "Reference ID bulunamadı" };
       }
       
-      // 🎯 OTP'NİN BU EMAIL İÇİN ALINDIĞINDAN EMİN OL
       if (this.instanceData.otpEmail !== this.instanceData.email) {
-        errorLog(this.requestId, `❌ OTP-EMAIL UYUŞMAZLIĞI! OTP: ${this.instanceData.otpEmail}, Mevcut: ${this.instanceData.email}`);
+        errorLog(this.requestId, `❌ [${this.requestId}] OTP-EMAIL UYUŞMAZLIĞI! OTP: ${this.instanceData.otpEmail}, Mevcut: ${this.instanceData.email}`);
         return { success: false, error: "OTP ve email uyuşmazlığı" };
       }
       
-      debugLog(this.requestId, `🔐 OTP doğrulama - Email: ${this.instanceData.email}, OTP: ${this.instanceData.otpCode}, Reference: ${this.instanceData.referenceId}`);
+      debugLog(this.requestId, `🔐 [${this.requestId}] OTP doğrulama - Email: ${this.instanceData.email}, OTP: ${this.instanceData.otpCode}, Reference: ${this.instanceData.referenceId}`);
       
-      // ✅ POST2 BODY - TÜM VERİLER BU INSTANCE'A AİT
       const postBody2 = {
-        otpReference: this.instanceData.referenceId,    // ✅ BU INSTANCE'IN REFERENCE ID'Sİ
-        otpCode: this.instanceData.otpCode              // ✅ BU INSTANCE'IN OTP KODU
+        otpReference: this.instanceData.referenceId,
+        otpCode: this.instanceData.otpCode
       };
       
       const result2 = await this.makePostRequest(
@@ -718,13 +742,13 @@ function createIsolatedInstance(instanceId) {
       return result2;
     },
     
-    // ✅ POST REQUEST - HER ZAMAN YENİ
+    // ✅ POST REQUEST - INSTANCE ID'Lİ
     makePostRequest: async function(url, body, xsrfToken, requestName = "POST") {
       if (!this.isActive) {
         return { success: false, error: "Instance inactive" };
       }
       
-      debugLog(this.requestId, `🎯 ${requestName} isteği: ${url}`);
+      debugLog(this.requestId, `🎯 [${this.requestId}] ${requestName} isteği: ${url}`);
       
       const headers = {
         "accept": this.instanceData.selectedHeaders.Accept,
@@ -762,7 +786,7 @@ function createIsolatedInstance(instanceId) {
           body: JSON.stringify(body)
         });
         
-        debugLog(this.requestId, `📡 ${requestName} Response Status: ${response.status}`);
+        debugLog(this.requestId, `📡 [${this.requestId}] ${requestName} Response Status: ${response.status}`);
         this.updateCookiesFromResponse(response, url);
         
         const responseText = await response.text();
@@ -774,7 +798,6 @@ function createIsolatedInstance(instanceId) {
           data = { success: false, error: "Invalid JSON response" };
         }
         
-        // ✅ POST DATA'YI INSTANCE'A KAYDET
         this.instanceData.postData[requestName] = {
           url: url,
           body: body,
@@ -790,51 +813,76 @@ function createIsolatedInstance(instanceId) {
           fingerprint: this.instanceData.selectedHeaders.fingerprint
         };
       } catch (error) {
-        errorLog(this.requestId, `❌ ${requestName} Hatası:`, error.message);
+        errorLog(this.requestId, `❌ [${this.requestId}] ${requestName} Hatası:`, error.message);
         return { success: false, error: error.message };
       }
     },
     
-    // ✅ ANA KAYIT FONKSİYONU - EMAIL VE OTP KARIŞMASI TAMAMEN ÖNLENDİ
+    // ✅ ANA KAYIT FONKSİYONU - INSTANCE ID'Lİ
     startRegistration: async function(email = null) {
-      console.log(`🚀 [${this.requestId}] YENİ KAYIT BAŞLATILIYOR - EMAIL/OTP KARIŞMASI YOK`);
+      console.log(`🚀 [${this.requestId}] YENİ KAYIT BAŞLATILIYOR - EMAIL KİLİTLİ`);
+      
+      // ✅ EMAIL'İ EN BAŞTAN KİLİTLE
+      const targetEmail = email || this.getFormattedEmail();
+      console.log(`🔒 [${this.requestId}] KİLİTLENMİŞ EMAIL: ${targetEmail}`);
       
       try {
-        // ✅ İŞLEM BAŞI TEMİZLİK - HER ZAMAN
-        this.initializeCleanState();
+        // ✅ TEMİZLİK - EMAIL KORUNACAK
+        debugLog(this.requestId, `✨ [${this.requestId}] Instance temizleniyor (email korunacak)...`);
         
-        console.log(`🔍 [${this.requestId}] Instance tamamen temiz - email/OTP karışması yok`);
+        this.instanceData.cookies.clear();
+        this.instanceData.otpCode = null;
+        this.instanceData.otpRetrieved = false;
+        this.instanceData.otpEmail = null;
+        this.instanceData.referenceId = null;
+        this.instanceData.requestId = null;
+        this.instanceData.xsrfTokens = { step1: null, step2: null, step3: null };
+        this.instanceData.userInfo = { firstName: null, lastName: null, password: "Hepsiburada1" };
+        this.instanceData.postData = { step1: null, step2: null, step3: null };
+        this.instanceData.stepStatus = {
+          cookiesLoaded: false,
+          xsrf1Received: false,
+          post1Completed: false,
+          otpRequested: false,
+          otpReceived: false,
+          xsrf2Received: false,
+          post2Completed: false,
+          xsrf3Received: false,
+          post3Completed: false
+        };
         
-        // ✅ 1. HEADER OLUŞTUR - YENİ
-        debugLog(this.requestId, `\n🔧 1. ADIM: YENİ header'lar oluşturuluyor...`);
+        // ✅ EMAIL KORU - DEĞİŞMEYECEK
+        this.instanceData.email = targetEmail;
+        this.instanceData.emailGenerated = true;
+        
+        this.isActive = true;
+        this.startTime = Date.now();
+        
+        console.log(`🔍 [${this.requestId}] Instance temiz - Kilitli Email: ${targetEmail}`);
+        
+        // ✅ 1. HEADER OLUŞTUR
+        debugLog(this.requestId, `\n🔧 [${this.requestId}] 1. ADIM: YENİ header'lar oluşturuluyor...`);
         this.initializeHeaders();
         
-        // ✅ 2. EMAIL BELİRLE - BU INSTANCE'A ÖZEL
-        debugLog(this.requestId, `\n🔧 2. ADIM: BU INSTANCE için YENİ email oluşturuluyor...`);
-        const targetEmail = email || this.getFormattedEmail();
-        
-        console.log(`📧 [${this.requestId}] INSTANCE EMAIL: ${targetEmail}`);
-        
-        // ✅ 3. COOKIE SETİ YÜKLE - BU INSTANCE'A ÖZEL
-        debugLog(this.requestId, `\n🔧 3. ADIM: BU INSTANCE için YENİ cookie seti yükleniyor...`);
+        // ✅ 2. COOKIE SETİ YÜKLE
+        debugLog(this.requestId, `\n🔧 [${this.requestId}] 2. ADIM: BU INSTANCE için YENİ cookie seti yükleniyor...`);
         const cookieSuccess = await this.loadInitialCookies();
         if (!cookieSuccess) {
           throw new Error("Cookie seti alınamadı");
         }
         
-        // ✅ 4. XSRF TOKEN AL - BU INSTANCE'A ÖZEL
-        debugLog(this.requestId, `\n🔧 4. ADIM: BU INSTANCE için YENİ XSRF Token alınıyor...`);
+        // ✅ 3. XSRF TOKEN AL
+        debugLog(this.requestId, `\n🔧 [${this.requestId}] 3. ADIM: BU INSTANCE için YENİ XSRF Token alınıyor...`);
         let xsrfToken1 = await this.getXsrfToken("step1");
         if (!xsrfToken1) {
           throw new Error("1. XSRF Token alınamadı");
         }
         
-        // ✅ 5. 1. POST - ÜYELİK İSTEĞİ - BU EMAIL İLE
-        debugLog(this.requestId, `\n🔧 5. ADIM: BU EMAIL ile üyelik isteği gönderiliyor: ${targetEmail}`);
+        // ✅ 4. 1. POST - KİLİTLİ EMAIL İLE
+        debugLog(this.requestId, `\n🔧 [${this.requestId}] 4. ADIM: KİLİTLİ EMAIL ile üyelik isteği gönderiliyor: ${targetEmail}`);
         
-        // ✅ POST1 BODY - TÜM VERİLER BU INSTANCE'A AİT
         const postBody1 = {
-          email: targetEmail  // ✅ BU INSTANCE'IN EMAIL'I
+          email: targetEmail  // ✅ KİLİTLİ EMAIL
         };
         
         const result1 = await this.makePostRequest(
@@ -849,35 +897,34 @@ function createIsolatedInstance(instanceId) {
           throw new Error(`1. POST başarısız: ${result1.data?.message || result1.error || 'Bilinmeyen hata'}`);
         }
         
-        // ✅ REFERENCE ID'Yİ INSTANCE'A KAYDET - BU EMAIL İÇİN
         this.instanceData.referenceId = result1.data.data.referenceId;
         this.instanceData.stepStatus.post1Completed = true;
         
         console.log(`✅ [${this.requestId}] 1. POST BAŞARILI - ReferenceId: ${this.instanceData.referenceId}, Email: ${targetEmail}`);
         
-        // ✅ 6. OTP BEKLE - BU EMAIL İÇİN OTP GELECEK
-        debugLog(this.requestId, `\n⏳ 6. ADIM: BU EMAIL için OTP bekleniyor: ${targetEmail} (15 saniye)...`);
+        // ✅ 5. OTP BEKLE
+        debugLog(this.requestId, `\n⏳ [${this.requestId}] 5. ADIM: KİLİTLİ EMAIL için OTP bekleniyor: ${targetEmail} (15 saniye)...`);
         await this.delay(15000);
         
-        // ✅ 7. OTP KODU AL - SADECE BU EMAIL İÇİN
-        debugLog(this.requestId, `\n🔧 7. ADIM: BU EMAIL için OTP kodu alınıyor: ${targetEmail}`);
+        // ✅ 6. OTP KODU AL
+        debugLog(this.requestId, `\n🔧 [${this.requestId}] 6. ADIM: KİLİTLİ EMAIL için OTP kodu alınıyor: ${targetEmail}`);
         const otpCode = await this.getOtpCode();
         
         if (!otpCode) {
           throw new Error(`OTP kodu alınamadı (Email: ${targetEmail})`);
         }
         
-        console.log(`✅ [${this.requestId}] BU EMAIL için OTP KODU HAZIR: ${otpCode}, Email: ${targetEmail}`);
+        console.log(`✅ [${this.requestId}] KİLİTLİ EMAIL için OTP KODU HAZIR: ${otpCode}, Email: ${targetEmail}`);
         
-        // ✅ 8. 2. XSRF TOKEN AL - BU INSTANCE İÇİN
-        debugLog(this.requestId, `\n🔧 8. ADIM: 2. POST için YENİ XSRF Token alınıyor...`);
+        // ✅ 7. 2. XSRF TOKEN AL
+        debugLog(this.requestId, `\n🔧 [${this.requestId}] 7. ADIM: 2. POST için YENİ XSRF Token alınıyor...`);
         let xsrfToken2 = await this.getXsrfToken("step2");
         if (!xsrfToken2) {
           throw new Error("2. XSRF Token alınamadı");
         }
         
-        // ✅ 9. 2. POST - OTP DOĞRULAMA (GÜVENLİ VERSİYON)
-        debugLog(this.requestId, `\n🔧 9. ADIM: OTP doğrulama gönderiliyor (Email/OTP kontrolü ile)...`);
+        // ✅ 8. 2. POST - OTP DOĞRULAMA
+        debugLog(this.requestId, `\n🔧 [${this.requestId}] 8. ADIM: OTP doğrulama gönderiliyor...`);
         
         const result2 = await this.validateOtpWithEmailCheck(xsrfToken2);
         
@@ -886,44 +933,41 @@ function createIsolatedInstance(instanceId) {
           throw new Error(`2. POST başarısız: ${result2.data?.message || result2.error || 'Bilinmeyen hata'}`);
         }
         
-        // ✅ REQUEST ID'Yİ INSTANCE'A KAYDET
         this.instanceData.requestId = result2.data.requestId;
         this.instanceData.stepStatus.post2Completed = true;
         
         console.log(`✅ [${this.requestId}] 2. POST BAŞARILI - RequestId: ${this.instanceData.requestId}`);
         
-        // ✅ 10. KAYIT ÖNCESİ BEKLE
-        debugLog(this.requestId, `\n⏳ 10. ADIM: Kayıt öncesi bekleniyor (3 saniye)...`);
+        // ✅ 9. KAYIT ÖNCESİ BEKLE
+        debugLog(this.requestId, `\n⏳ [${this.requestId}] 9. ADIM: Kayıt öncesi bekleniyor (3 saniye)...`);
         await this.delay(3000);
         
-        // ✅ 11. 3. XSRF TOKEN AL - BU INSTANCE İÇİN
-        debugLog(this.requestId, `\n🔧 11. ADIM: 3. POST için YENİ XSRF Token alınıyor...`);
+        // ✅ 10. 3. XSRF TOKEN AL
+        debugLog(this.requestId, `\n🔧 [${this.requestId}] 10. ADIM: 3. POST için YENİ XSRF Token alınıyor...`);
         let xsrfToken3 = await this.getXsrfToken("step3");
         if (!xsrfToken3) {
           throw new Error("3. XSRF Token alınamadı");
         }
         
-        // ✅ 12. KULLANICI BİLGİLERİ - BU INSTANCE İÇİN
+        // ✅ 11. KULLANICI BİLGİLERİ
         const firstName = this.getRandomTurkishName();
         const lastName = this.getRandomTurkishName();
         
-        // ✅ KULLANICI BİLGİLERİNİ INSTANCE'A KAYDET
         this.instanceData.userInfo.firstName = firstName;
         this.instanceData.userInfo.lastName = lastName;
         
         console.log(`🎭 [${this.requestId}] YENİ kullanıcı bilgileri: ${firstName} ${lastName}, Şifre: ${this.instanceData.userInfo.password}`);
         
-        // ✅ 13. 3. POST - KAYIT TAMAMLAMA - YENİ
-        debugLog(this.requestId, `\n🔧 13. ADIM: YENİ kayıt tamamlama gönderiliyor...`);
+        // ✅ 12. 3. POST - KAYIT TAMAMLAMA
+        debugLog(this.requestId, `\n🔧 [${this.requestId}] 12. ADIM: YENİ kayıt tamamlama gönderiliyor...`);
         
-        // ✅ POST3 BODY - TÜM VERİLER BU INSTANCE'A AİT
         const postBody3 = {
           subscribeEmail: true,
-          firstName: this.instanceData.userInfo.firstName,      // ✅ BU INSTANCE'IN ADI
-          lastName: this.instanceData.userInfo.lastName,        // ✅ BU INSTANCE'IN SOYADI
-          password: this.instanceData.userInfo.password,        // ✅ BU INSTANCE'IN ŞİFRESİ
+          firstName: this.instanceData.userInfo.firstName,
+          lastName: this.instanceData.userInfo.lastName,
+          password: this.instanceData.userInfo.password,
           subscribeSms: true,
-          requestId: this.instanceData.requestId                // ✅ BU INSTANCE'IN REQUEST ID'Sİ
+          requestId: this.instanceData.requestId
         };
         
         const result3 = await this.makePostRequest(
@@ -937,9 +981,9 @@ function createIsolatedInstance(instanceId) {
         
         if (result3.success && result3.data?.success) {
           console.log(`🎉 🎉 🎉 [${this.requestId}] KAYIT BAŞARILI! 🎉 🎉 🎉`);
-          console.log(`📧 Email: ${targetEmail}`);
-          console.log(`👤 Ad: ${firstName} ${lastName}`);
-          console.log(`🔑 Şifre: ${this.instanceData.userInfo.password}`);
+          console.log(`📧 [${this.requestId}] Email: ${targetEmail}`);
+          console.log(`👤 [${this.requestId}] Ad: ${firstName} ${lastName}`);
+          console.log(`🔑 [${this.requestId}] Şifre: ${this.instanceData.userInfo.password}`);
           
           return {
             success: true,
@@ -973,18 +1017,17 @@ function createIsolatedInstance(instanceId) {
           instanceData: this.getSummaryData()
         };
       } finally {
-        // ✅ İŞLEM SONU TEMİZLİK - HER ZAMAN
         this.cleanup();
       }
     },
     
-    // ✅ INSTANCE ÖZET VERİSİ
+    // ✅ INSTANCE ÖZET VERİSİ - INSTANCE ID'Lİ
     getSummaryData: function() {
       return {
         instanceId: this.requestId,
         email: this.instanceData.email,
         otpCode: this.instanceData.otpCode,
-        otpEmail: this.instanceData.otpEmail, // 🎯 HANGİ EMAIL İÇİN OTP ALINDI
+        otpEmail: this.instanceData.otpEmail,
         referenceId: this.instanceData.referenceId,
         requestId: this.instanceData.requestId,
         userInfo: this.instanceData.userInfo,
@@ -1021,10 +1064,9 @@ var worker_default = {
     
     const url = new URL(request.url);
     
-    // ✅ TAM İZOLE KAYIT - HER İSTEK İÇİN YENİ INSTANCE
     if (url.pathname === "/register") {
-      // ✅ HER İSTEK İÇİN YENİ UNIQUE ID - DAHA GÜVENLİ
-      const instanceId = `inst_${Date.now()}_${Math.random().toString(36).substring(2, 12)}`;
+      // ✅ HER İSTEK İÇİN TAMAMEN UNIQUE INSTANCE ID
+      const instanceId = `inst_${Date.now()}_${Math.random().toString(36).substring(2, 15)}_${Math.random().toString(36).substring(2, 10)}`;
       
       console.log(`🆕 YENİ INSTANCE OLUŞTURULUYOR: ${instanceId}`);
       const registration = createIsolatedInstance(instanceId);
@@ -1043,7 +1085,6 @@ var worker_default = {
           
           const result = await registration.startRegistration(email);
           
-          // ✅ TASK'A INSTANCE DATA'YI DA KAYDET
           taskManager.updateTask(registration.requestId, {
             status: result.success ? "completed" : "failed",
             endTime: new Date().toISOString(),
@@ -1078,7 +1119,6 @@ var worker_default = {
       });
     }
     
-    // ... diğer endpoint'ler aynı kalacak
     if (url.pathname === "/recent-tasks") {
       const stats = taskManager.getStats();
       
@@ -1112,7 +1152,7 @@ var worker_default = {
       try {
         cookieManager.cachedCookieSets = {};
         cookieManager.lastFetchTime = 0;
-        await cookieManager.refreshCookies();
+        await cookieManager.refreshCookiesWithLock();
         
         return new Response(JSON.stringify({
           success: true,
@@ -1139,7 +1179,7 @@ var worker_default = {
     }
     
     return new Response(JSON.stringify({
-      message: "Hepsiburada Kayıt API - EMAIL/OTP KARIŞMASI ÖNLENDİ",
+      message: "Hepsiburada Kayıt API - TAM İZOLE SİSTEM",
       endpoints: {
         "/register": "YENİ kayıt başlat",
         "/recent-tasks": "Son 100 işlemi görüntüle", 
@@ -1147,11 +1187,12 @@ var worker_default = {
         "/refresh-cookies": "Cookie'leri manuel yenile"
       },
       features: {
-        "🎯 Email-OTP Eşleştirme": "OTP'nin hangi email için alındığı kaydedilir",
-        "🎯 Instance Başına Unique Veri": "Her instance kendi email ve OTP'sine sahip",
-        "🎯 Güvenlik Kontrolleri": "OTP ve email uyuşmazlığı kontrol edilir",
-        "🎯 Tam Veri İzolasyonu": "Instance'lar arasında veri paylaşımı YOK",
-        "🎯 Detaylı Loglama": "Hangi email için OTP alındığı loglanır"
+        "🔒 Tüm Fonksiyonlar Instance ID'li": "Hiçbir veri karışmaz",
+        "🎯 Email Formatı Düzeltildi": "username.12a@34h.domain formatında",
+        "🔒 Lock Sistemi": "Cookie refresh için thread-safe lock",
+        "🎯 Instance Başına Email Listesi": "Her instance kendi email listesine sahip",
+        "🔒 Email Kilitleme": "Email işlem başında kilitlenir, değişmez",
+        "🛡️ Tam İzolasyon": "Instance'lar arasında veri paylaşımı YOK"
       }
     }, null, 2), {
       headers: { 

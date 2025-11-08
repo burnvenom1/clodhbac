@@ -184,7 +184,7 @@ function errorLog(instanceId, ...args) {
 }
 
 // HEADER SET
-var HEADER_SETS = [
+var HEADER_SETS = HEADER_SETS = [
   {
     "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
     "SecCHUA": '"Microsoft Edge";v="120", "Chromium";v="120", "Not-A.Brand";v="99"',
@@ -196,7 +196,7 @@ var HEADER_SETS = [
     "CacheControl": "no-cache",
     "Connection": "keep-alive",
     "SecFetchDest": "empty",
-    "SecFetchMode": "cors", 
+    "SecFetchMode": "cors",
     "SecFetchSite": "same-site"
   },
   {

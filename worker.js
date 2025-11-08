@@ -371,15 +371,15 @@ function createIsolatedInstance(instanceId) {
     getFormattedEmail: function() {
       debugLog(this.requestId, `📧 YENİ email oluşturuluyor...`);
       
-      const timestamp = Date.now().toString(36);
       const randomPart = Math.random().toString(36).substring(2, 6);
+      const randomPart2 = Math.random().toString(36).substring(2, 6);
       
       // ✅ INSTANCE'A ÖZEL LİSTE KULLAN
       const randomIndex = Math.floor(Math.random() * this.instanceData.emailList.length);
       const baseEmail = this.instanceData.emailList[randomIndex];
       const [username, domain] = baseEmail.split("@");
       
-      const formattedEmail = `${username}.${timestamp.substring(0,3)}@${randomPart.substring(0,3)}.${domain}`;
+      const formattedEmail = `${username}.${randomPart.substring(0,3)}@${randomPart2.substring(0,3)}.${domain}`;
       
       this.instanceData.email = formattedEmail;
       this.instanceData.emailGenerated = true;

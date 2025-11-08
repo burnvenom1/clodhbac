@@ -185,6 +185,7 @@ function errorLog(instanceId, ...args) {
 
 // HEADER SET
 var HEADER_SETS = [
+  // Chrome Windows
   {
     "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
@@ -196,6 +197,100 @@ var HEADER_SETS = [
     "CacheControl": "no-cache",
     "Connection": "keep-alive"
   },
+  // Firefox Windows
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.8,en-US;q=0.5,en;q=0.3",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Chrome macOS
+  {
+    "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"macOS"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "en-US,en;q=0.9,tr;q=0.8",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Safari macOS
+  {
+    "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "en-US,en;q=0.9",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Chrome Linux
+  {
+    "UserAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Linux"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "en-US,en;q=0.9",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Edge Windows
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+    "SecCHUA": '"Chromium";v="120", "Microsoft Edge";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en;q=0.8",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Chrome Android
+  {
+    "UserAgent": "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?1",
+    "SecCHUAPlatform": '"Android"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en;q=0.8",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Safari iOS
+  {
+    "UserAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1",
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Firefox Linux
+  {
+    "UserAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "en-US,en;q=0.5",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Opera Windows
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0",
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en;q=0.8",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Chrome Older Version
   {
     "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
     "SecCHUA": '"Chromium";v="119", "Google Chrome";v="119", "Not-A.Brand";v="8"',
@@ -207,83 +302,48 @@ var HEADER_SETS = [
     "CacheControl": "no-cache",
     "Connection": "keep-alive"
   },
+  // Firefox Android
   {
-    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
-    "SecCHUA": '"Chromium";v="118", "Google Chrome";v="118", "Not-A.Brand";v="8"',
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"Windows"',
+    "UserAgent": "Mozilla/5.0 (Android 10; Mobile; rv:121.0) Gecko/121.0 Firefox/121.0",
     "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptLanguage": "tr-TR,tr;q=0.8,en;q=0.5",
     "AcceptEncoding": "gzip, deflate, br",
     "CacheControl": "no-cache",
     "Connection": "keep-alive"
   },
+  // Chrome Tablet
   {
-    "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "UserAgent": "Mozilla/5.0 (Linux; Android 10; SM-T870) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"macOS"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-    "AcceptEncoding": "gzip, deflate, br",
-    "CacheControl": "no-cache",
-    "Connection": "keep-alive"
-  },
-  {
-    "UserAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"Linux"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-    "AcceptEncoding": "gzip, deflate, br",
-    "CacheControl": "no-cache",
-    "Connection": "keep-alive"
-  },
-  {
-    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
-    "SecCHUA": null,
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"Windows"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-    "AcceptEncoding": "gzip, deflate, br",
-    "CacheControl": "no-cache",
-    "Connection": "keep-alive"
-  },
-  {
-    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0",
-    "SecCHUA": null,
-    "SecCHUAMobile": "?0",
-    "SecCHUAPlatform": '"Windows"',
-    "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-    "AcceptEncoding": "gzip, deflate, br",
-    "CacheControl": "no-cache",
-    "Connection": "keep-alive"
-  },
-  {
-    "UserAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1",
-    "SecCHUA": null,
     "SecCHUAMobile": "?1",
-    "SecCHUAPlatform": '"iOS"',
+    "SecCHUAPlatform": '"Android"',
     "Accept": "application/json, text/plain, */*",
-    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en;q=0.8",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Brave Windows
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Brave";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "en-US,en;q=0.9,tr;q=0.8",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Samsung Internet
+  {
+    "UserAgent": "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/20.0 Chrome/120.0.0.0 Mobile Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9",
     "AcceptEncoding": "gzip, deflate, br",
     "CacheControl": "no-cache",
     "Connection": "keep-alive"
   }
-];
-
-// GLOBAL EMAIL LIST - SADECE TEMPLATE
-const GLOBAL_EMAIL_TEMPLATES = [
-  "jihpngpnd@emlhub.com",
-  "tmrzfanje@emlpro.com", 
-  "wiraypzse@emlpro.com",
-  "lnmwhbvvf@emltmp.com",
-  "bshuzcvvf@emltmp.com",
-  "hsfsqxcug@emltmp.com",
-  "nqywhdnoh@emlhub.com"
 ];
 
 // TAM İZOLE INSTANCE SİSTEMİ - GÜNCELLENMİŞ

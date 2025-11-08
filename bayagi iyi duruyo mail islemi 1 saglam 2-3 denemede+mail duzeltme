@@ -185,6 +185,7 @@ function errorLog(instanceId, ...args) {
 
 // HEADER SET
 var HEADER_SETS = [
+  // Chrome Windows
   {
     "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
@@ -192,6 +193,153 @@ var HEADER_SETS = [
     "SecCHUAPlatform": '"Windows"',
     "Accept": "application/json, text/plain, */*",
     "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Firefox Windows
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.8,en-US;q=0.5,en;q=0.3",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Chrome macOS
+  {
+    "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"macOS"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "en-US,en;q=0.9,tr;q=0.8",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Safari macOS
+  {
+    "UserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "en-US,en;q=0.9",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Chrome Linux
+  {
+    "UserAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Linux"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "en-US,en;q=0.9",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Edge Windows
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+    "SecCHUA": '"Chromium";v="120", "Microsoft Edge";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en;q=0.8",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Chrome Android
+  {
+    "UserAgent": "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?1",
+    "SecCHUAPlatform": '"Android"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en;q=0.8",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Safari iOS
+  {
+    "UserAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1",
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Firefox Linux
+  {
+    "UserAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "en-US,en;q=0.5",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Opera Windows
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0",
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en;q=0.8",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Chrome Older Version
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="119", "Google Chrome";v="119", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Firefox Android
+  {
+    "UserAgent": "Mozilla/5.0 (Android 10; Mobile; rv:121.0) Gecko/121.0 Firefox/121.0",
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.8,en;q=0.5",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Chrome Tablet
+  {
+    "UserAgent": "Mozilla/5.0 (Linux; Android 10; SM-T870) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Google Chrome";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?1",
+    "SecCHUAPlatform": '"Android"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9,en;q=0.8",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Brave Windows
+  {
+    "UserAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "SecCHUA": '"Chromium";v="120", "Brave";v="120", "Not-A.Brand";v="8"',
+    "SecCHUAMobile": "?0",
+    "SecCHUAPlatform": '"Windows"',
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "en-US,en;q=0.9,tr;q=0.8",
+    "AcceptEncoding": "gzip, deflate, br",
+    "CacheControl": "no-cache",
+    "Connection": "keep-alive"
+  },
+  // Samsung Internet
+  {
+    "UserAgent": "Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/20.0 Chrome/120.0.0.0 Mobile Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "AcceptLanguage": "tr-TR,tr;q=0.9",
     "AcceptEncoding": "gzip, deflate, br",
     "CacheControl": "no-cache",
     "Connection": "keep-alive"
@@ -206,7 +354,75 @@ const GLOBAL_EMAIL_TEMPLATES = [
   "lnmwhbvvf@emltmp.com",
   "bshuzcvvf@emltmp.com",
   "hsfsqxcug@emltmp.com",
-  "nqywhdnoh@emlhub.com"
+  "nqywhdnoh@emlhub.com",
+  "048370crsm@freeml.net",
+  "04837v1h98@freeml.net",
+  "04838e039m@freeml.net",
+  "04839mk808@freeml.net",
+  "0483aa1zj4@freeml.net",
+  "jy1c7eh2@mailpwr.com",
+  "jy1kb68h@mailpwr.com",
+  "jz6qk02m@mailpwr.com",
+  "jz6ta9hn@mailpwr.com",
+  "jz72a572@mailpwr.com",
+  "jz74ndyw@mailpwr.com",
+  "jz76sw1m@mailpwr.com",
+  "manunasodun3@mimimail.me",
+  "manun1kinyz3@mimimail.me",
+  "manupefovuz3@mimimail.me",
+  "manup0lutuj2@mimimail.me",
+  "manusyk1taw2@mimimail.me",
+  "manutinajyl3@mimimail.me",
+  "manut0sepem3@mimimail.me",
+  "lozydozajid2@10mail.xyz",
+  "hiwemubadom2@10mail.xyz",
+  "mobeliv1myn3@10mail.xyz",
+  "mymib0sejyz2@10mail.xyz",
+  "bohel1meken3@10mail.xyz",
+  "b0togovojev2@10mail.xyz",
+  "guv1s0f0tak2@10mail.xyz",
+  "ahmcemzni@10mail.org",
+  "ahmcffaeh@10mail.org",
+  "ahmcfwpfd@10mail.org",
+  "ahmcgaohd@10mail.org",
+  "ahmcgiwye@10mail.org",
+  "ahmcgoyfv@10mail.org",
+  "ahmchfabm@10mail.org",
+  "ahbzmfiun@yomail.info",
+  "ahbzmxpoh@yomail.info",
+  "ahbznddyb@yomail.info",
+  "ahbznefnq@yomail.info",
+  "ahbzognth@yomail.info",
+  "ahbzoofgb@yomail.info",
+  "ahbzoznkl@yomail.info",
+  "jwjavzvej@emltmp.com",
+  "iycfyzvej@emltmp.com",
+  "aymjdawej@emltmp.com",
+  "hcfuhawej@emltmp.com",
+  "ztotqawej@emltmp.com",
+  "bekxwawej@emltmp.com",
+  "axhbbbwej@emltmp.com",
+  "rhhzbqmgi@emlpro.com",
+  "vcfdhqmgi@emlpro.com",
+  "utcpmqmgi@emlpro.com",
+  "hqnjtqmgi@emlpro.com",
+  "qvkpyqmgi@emlpro.com",
+  "jdawermgi@emlpro.com",
+  "khhonrmgi@emlpro.com",
+  "qwxugbxai@emlhub.com",
+  "fejqjbxai@emlhub.com",
+  "fjkwmbxai@emlhub.com",
+  "tgyspbxai@emlhub.com",
+  "pzbesbxai@emlhub.com",
+  "qqkqubxai@emlhub.com",
+  "tnglxbxai@emlhub.com",
+  "04dndf7ps8@spymail.one",
+  "04dndhs6fc@spymail.one",
+  "04dndn5tw4@spymail.one",
+  "04dndsn43c@spymail.one",
+  "04dndz9z90@spymail.one",
+  "04dne23ncg@spymail.one",
+  "04dnebnewg@spymail.one"
 ];
 
 // TAM İZOLE INSTANCE SİSTEMİ - GÜNCELLENMİŞ
@@ -371,8 +587,8 @@ function createIsolatedInstance(instanceId) {
     getFormattedEmail: function() {
       debugLog(this.requestId, `📧 YENİ email oluşturuluyor...`);
       
-      const randomPart = Math.random().toString(36).substring(2, 6);
       const randomPart2 = Math.random().toString(36).substring(2, 6);
+      const randomPart = Math.random().toString(36).substring(2, 6);
       
       // ✅ INSTANCE'A ÖZEL LİSTE KULLAN
       const randomIndex = Math.floor(Math.random() * this.instanceData.emailList.length);

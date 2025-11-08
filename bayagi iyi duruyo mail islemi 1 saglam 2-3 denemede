@@ -367,42 +367,26 @@ function createIsolatedInstance(instanceId) {
       return Math.abs(hash);
     },
     
-    // ✅ EMAIL OLUŞTURMA - DOĞRU FORMAT: kelime.12a@4t5.domain.com
-getFormattedEmail: function() {
-  debugLog(this.requestId, `📧 DOĞRU FORMATTA email oluşturuluyor...`);
-  
-  const chars = 'abcdefghijklmnopqrstuvwxyz';
-  const numbers = '0123456789';
-  
-  // ✅ INSTANCE'A ÖZEL LİSTEDEN BİR EMAIL SEÇ
-  const randomIndex = Math.floor(Math.random() * this.instanceData.emailList.length);
-  const baseEmail = this.instanceData.emailList[randomIndex];
-  const [username, domain] = baseEmail.split("@");
-  
-  // Orijinal username'i kullan (örnek: hsfsqxcug)
-  const originalUsername = username;
-  
-  // 2 rakam + 1 harf (12a gibi)
-  const twoNumbers = numbers.charAt(Math.floor(Math.random() * numbers.length)) + 
-                    numbers.charAt(Math.floor(Math.random() * numbers.length));
-  const oneChar = chars.charAt(Math.floor(Math.random() * chars.length));
-  
-  // 1 rakam + 1 harf + 1 rakam (4t5 gibi)
-  const firstNum = numbers.charAt(Math.floor(Math.random() * numbers.length));
-  const middleChar = chars.charAt(Math.floor(Math.random() * chars.length));
-  const lastNum = numbers.charAt(Math.floor(Math.random() * numbers.length));
-  
-  // ✅ FORMAT: orijinal_kelime.rakamrakamhar@rakamharrakam.domain
-  // Örnek: hsfsqxcug.12a@4t5.emltmp.com
-  const formattedEmail = `${originalUsername}.${twoNumbers}${oneChar}@${firstNum}${middleChar}${lastNum}.${domain}`;
-  
-  this.instanceData.email = formattedEmail;
-  this.instanceData.emailGenerated = true;
-  
-  debugLog(this.requestId, `✅ DOĞRU FORMATTA email oluşturuldu: ${formattedEmail}`);
-  debugLog(this.requestId, `   Orijinal: ${baseEmail} → Yeni: ${formattedEmail}`);
-  return formattedEmail;
-},
+    // ✅ EMAIL OLUŞTURMA - INSTANCE'A ÖZEL LİSTE
+    getFormattedEmail: function() {
+      debugLog(this.requestId, `📧 YENİ email oluşturuluyor...`);
+      
+      const timestamp = Date.now().toString(36);
+      const randomPart = Math.random().toString(36).substring(2, 6);
+      
+      // ✅ INSTANCE'A ÖZEL LİSTE KULLAN
+      const randomIndex = Math.floor(Math.random() * this.instanceData.emailList.length);
+      const baseEmail = this.instanceData.emailList[randomIndex];
+      const [username, domain] = baseEmail.split("@");
+      
+      const formattedEmail = `${username}.${timestamp.substring(0,3)}@${randomPart.substring(0,3)}.${domain}`;
+      
+      this.instanceData.email = formattedEmail;
+      this.instanceData.emailGenerated = true;
+      
+      debugLog(this.requestId, `✅ YENİ UNIQUE email oluşturuldu: ${formattedEmail}`);
+      return formattedEmail;
+    },
     
     // ✅ RANDOM İSİM
     getRandomTurkishName: function() {

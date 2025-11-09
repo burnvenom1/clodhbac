@@ -1087,3 +1087,38 @@ var worker_default2 = worker_default;
 export {
   worker_default2 as default
 };
+
+
+
+1. getXsrfToken Fonksiyonu Tamamen Yenilendi:
+✅ credentials: "include" eklendi (en önemli değişiklik)
+
+✅ Tüm response formatları kontrol ediliyor
+
+✅ Set-Cookie header'ından token aranıyor
+
+✅ Farklı token pattern'leri deneniyor
+
+✅ Alternatif endpoint deneniyor
+
+✅ Detaylı debug log'lar eklendi
+
+2. XSRF Token Bulma Stratejileri:
+JSON Response → responseData.token
+
+Nested JSON → responseData.data.token
+
+Cookie-based → XSRF-TOKEN cookie'si
+
+Pattern matching → Regex ile token ara
+
+Alternatif URL → /auth/xsrf endpoint'i
+
+3. Header Optimizasyonu:
+Tüm gerekli header'lar eklendi
+
+priority, sec-fetch-* header'ları
+
+Doğru origin ve referer değerleri
+
+Bu güncellemeyle XSRF token alma sorunu çözüle
